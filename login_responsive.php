@@ -6,13 +6,25 @@ if (isset($_SESSION['nombre'])) {
     exit();
 }
 
+include("conexion_bd.php");
+include("funciones.php");
+
+$error = "";
+
 if (isset($_POST['enviar'])) {
+    $dni = $_POST['dni'];
+    $password = $_POST['password'];
     $sesion = isset($_POST["sesion"]) ? "si" : "no";
 
-    if ($sesion == "si") {
-        $_SESSION['nombre'] = 1; // O el nombre real del usuario
+    if (validar_usuario($conexion, $dni, $password)) {
+        $_SESSION['nombre'] = $dni; // Puedes guardar el DNI o cualquier otro dato
+        if ($sesion == "si") {
+            // Opcional: configura algo para mantener la sesión más tiempo
+        }
         header("Location: asistencia_responsive.php");
         exit();
+    } else {
+        $error = "Usuario o contraseña incorrectos.";
     }
 }
 ?>
@@ -203,25 +215,6 @@ if (isset($_POST['enviar'])) {
       <button type="submit" name="enviar">Entrar</button>
     </form>
   </div>
-
-  <script>
-        
-        function validar(){
-            var dni = document.getElementById("dni").value;
-            var contraseña = document.getElementById("password").value;
-
-            if (dni === "12345678X" && contraseña === "contraseña1") {
-                return true;
-            } else {
-                 alert ("Usuario o contraseña incorrectos")
-                return false;
-            }
-        }
-    
-    </script>
-
-
-
     <!-- Volveremos aqui luego -->
 
 </body>
