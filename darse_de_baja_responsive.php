@@ -1,8 +1,5 @@
 <?php
-session_start();
-if (!isset($_SESSION['nombre'])) {
-    header("Location: login_responsive.php");
-}
+include("validar_sesion.php");
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -166,7 +163,7 @@ if (!isset($_SESSION['nombre'])) {
   <!-- Encabezado -->
   <div class="barra-superior">
   <div class="contenedor-barra">
-    <p><span>Inter</span>empleo - Registro</p>
+    <p><span>Inter</span>empleo - Eliminar</p>
     <a class="boton-enlace" href="asistencia_responsive.php">Volver a asistencias</a>
   </div>
 </div>
@@ -199,16 +196,27 @@ if (!isset($_SESSION['nombre'])) {
 
     <?php
     if (isset($_POST['enviar'])) {
-        $nombre = strip_tags($_POST['nombre']);
-        $dni = strip_tags($_POST['dni']);
-        include("conexion_bd.php");
-        $nombre=mysqli_real_escape_string($conexion, $nombre);
-        $dni=mysqli_real_escape_string($conexion, $dni);
-        $consulta = "DELETE FROM trabajadores WHERE nombre ='$nombre' AND dni='$dni'";
-        mysqli_query($conexion, $consulta);
-        mysqli_close($conexion);
-        echo "<p style='margin-top: 1rem; color: green; font-weight: bold;'>Usuario eliminado correctamente</p>";
-    }
+       $nombre = strip_tags($_POST['nombre']);
+       $dni = strip_tags($_POST['dni']);
+
+    include("conexion_bd.php");
+
+      $nombre = mysqli_real_escape_string($conexion, $nombre);
+      $dni = mysqli_real_escape_string($conexion, $dni);
+
+      $consulta = "DELETE FROM trabajadores WHERE nombre = '$nombre' AND dni = '$dni'";
+      mysqli_query($conexion, $consulta);
+
+    // Verificar si se eliminó alguna fila
+      if (mysqli_affected_rows($conexion) > 0) {
+         echo "<p style='margin-top: 1rem; color: green; font-weight: bold;'>✅ Usuario eliminado correctamente.</p>";
+     } else {
+          echo "<p style='margin-top: 1rem; color: red; font-weight: bold;'>❌ No se encontró ningún usuario con ese nombre y DNI.</p>";
+      }
+
+      mysqli_close($conexion);
+  }
+
     ?>
   </div>
 </body>

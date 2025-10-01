@@ -12,20 +12,39 @@ include("funciones.php");
 $error = "";
 
 if (isset($_POST['enviar'])) {
-    $dni = $_POST['dni'];
-    $password = $_POST['password'];
-    $sesion = isset($_POST["sesion"]) ? "si" : "no";
-
+  $dni = mysqli_real_escape_string($conexion, strip_tags($_POST['dni']));
+  $password = mysqli_real_escape_string($conexion, strip_tags($_POST['password']));
+  $sesion = isset($_POST["sesion"]) ? "si" : "no";
     if (validar_usuario($conexion, $dni, $password)) {
-        $_SESSION['nombre'] = $dni; // Puedes guardar el DNI o cualquier otro dato
-        if ($sesion == "si") {
-            // Opcional: configura algo para mantener la sesión más tiempo
-        }
-        header("Location: asistencia_responsive.php");
-        exit();
+    $_SESSION['nombre'] = $dni;
+
+    // Obtener el rol del usuario
+    $consulta_rol = "SELECT rol FROM usuarios WHERE dni = '$dni'";
+    $resultado_rol = mysqli_query($conexion, $consulta_rol);
+    
+    if ($resultado_rol && mysqli_num_rows($resultado_rol) === 1) {
+        $fila_rol = mysqli_fetch_row($resultado_rol); // fetch_row devuelve array numérico
+        $_SESSION['rol'] = $fila_rol[0];
     } else {
-        $error = "Usuario o contraseña incorrectos.";
+        $_SESSION['rol'] = '';
     }
+
+    // Guardamos si el usuario quiere mantener la sesión o no
+    $_SESSION['sesion'] = $sesion; // "si" o "no"
+
+    // Si no quiere mantener sesión, se crea una cookie temporal de 1 minuto
+    if ($sesion === "no") {
+        setcookie("sesion_temporal", "1", time() + 60, "/");
+    } else {
+        // Si se marcó que sí, eliminamos cualquier cookie anterior
+        if (isset($_COOKIE["sesion_temporal"])) {
+            setcookie("sesion_temporal", "", time() - 3600, "/"); // borrar cookie
+        }
+    }
+
+    header("Location: asistencia_responsive.php");
+    exit();
+  }
 }
 ?>
 
@@ -180,6 +199,24 @@ if (isset($_POST['enviar'])) {
         font-size: 1rem;
       }
     }
+    .password-container {
+  position: relative;
+}
+
+.password-container input {
+  padding-right: 2.5rem; /* espacio para el icono */
+}
+
+.toggle-password {
+  position: absolute;
+  top: 50%;
+  right: 0.75rem;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 1.1rem;
+  color: var(--color-texto);
+  user-select: none;
+}
   </style>
 </head>
 <body>
@@ -203,7 +240,11 @@ if (isset($_POST['enviar'])) {
       <input type="text" id="dni" name="dni" required>
 
       <label for="password">Contraseña</label>
+      <div class="password-container">
       <input type="password" id="password" name="password" required>
+      <span class="toggle-password" onclick="togglePassword()">👁️</span>
+      </div>
+
 
       <a href="recuperar_contraseña_responsive.php">¿Has olvidado tu contraseña?</a>
 
@@ -215,7 +256,16 @@ if (isset($_POST['enviar'])) {
       <button type="submit" name="enviar">Entrar</button>
     </form>
   </div>
-    <!-- Volveremos aqui luego -->
+    
+    <script>
+  function togglePassword() {
+    const input = document.getElementById("password");
+    const toggle = document.querySelector(".toggle-password");
+    const isPassword = input.type === "password";
+    input.type = isPassword ? "text" : "password";
+    toggle.textContent = isPassword ? "🙈" : "👁️"; // cambia el icono
+  }
+</script>
 
 </body>
 </html>

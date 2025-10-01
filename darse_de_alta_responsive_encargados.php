@@ -1,10 +1,13 @@
 <?php
-session_start();
-if (!isset($_SESSION['nombre'])) {
+include("validar_sesion.php");
+
+// Verificamos si el rol está seteado y es 'administrador'
+if (!isset($_SESSION['rol']) || $_SESSION['rol'] !== 'administrador') {
+    // Si no es admin, redirigimos a asistencia.php u otra página
     header("Location: login_responsive.php");
+    exit();
 }
 ?>
-
 
 
 

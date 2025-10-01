@@ -1,8 +1,5 @@
 <?php
-session_start();
-if (!isset($_SESSION['nombre'])) {
-    header("Location: login_responsive.php");
-}
+include("validar_sesion.php")
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -201,13 +198,20 @@ if (!isset($_SESSION['nombre'])) {
 </head>
 <body>
 
-  <!-- BARRA SUPERIOR -->
   <div class="barra-superior">
     <p><span>Inter</span>empleo - Asistencia</p>
-    <a href="darse_de_alta_responsive.php">Darse de alta </a>
-    <a href="darse_de_baja_responsive.php">Darse de baja </a>
+    <a href="darse_de_alta_responsive.php">Darse de alta</a>
+    <a href="darse_de_baja_responsive.php">Darse de baja</a>
     <a href="cerrar_sesion.php">Cerrar sesión</a>
-  </div>
+
+    <?php
+    // Mostrar enlaces solo para administradores
+    if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'administrador') {
+        echo '<a href="darse_de_alta_responsive_encargados.php">Darse de alta encargados</a>';
+        echo '<a href="darse_de_baja_responsive_encargados.php">Darse de baja encargados</a>';
+    }
+    ?>
+</div>
 
   <!-- CONTENIDO -->
   <div class="contenido">

@@ -1,8 +1,5 @@
 <?php
-session_start();
-if (!isset($_SESSION['nombre'])) {
-    header("Location: login_responsive.php");
-}
+include("validar_sesion.php");
 ?>
 <!DOCTYPE html>
 <html lang="es">
