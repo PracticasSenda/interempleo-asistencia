@@ -208,7 +208,7 @@ include("validar_sesion.php")
     // Mostrar enlaces solo para administradores
     if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'administrador') {
         echo '<a href="darse_de_alta_responsive_encargados.php">Darse de alta encargados</a>';
-        echo '<a href="darse_de_baja_responsive_encargados.php">Darse de baja encargados</a>';
+        echo '<a href="baja_encargados.php">Darse de baja encargados</a>';
     }
     ?>
 </div>
@@ -316,3 +316,4 @@ include("validar_sesion.php")
   ?>
 </body>
 </html>
+
