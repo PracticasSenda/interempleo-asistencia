@@ -228,10 +228,121 @@ include("validar_sesion.php");
   <a href="darse_de_baja_responsive.php">Darse de baja</a>
   <a href="cerrar_sesion.php">Cerrar sesión</a>
 
+<<<<<<< HEAD
   <?php
   if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'administrador') {
       echo '<a href="darse_de_alta_responsive_encargados.php">Darse de alta encargados</a>';
       echo '<a href="darse_de_baja_responsive_encargados.php">Darse de baja encargados</a>';
+=======
+    <?php
+    // Mostrar enlaces solo para administradores
+    if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'administrador') {
+        echo '<a href="darse_de_alta_responsive_encargados.php">Darse de alta encargados</a>';
+        echo '<a href="baja_encargados.php">Darse de baja encargados</a>';
+    }
+    ?>
+</div>
+
+  <!-- CONTENIDO -->
+  <div class="contenido">
+    <h2>Parte de asistencia</h2>
+
+    <form method="post" action="asistencia_responsive.php">
+      <table class="formulario-tabla">
+        <tr>
+          <td><label for="nombre_encargado">Nombre:</label></td>
+        </tr>
+        <tr>
+          <td><input type="text" name="nombre_encargado" id="nombre_encargado" required></td>
+        </tr>
+        <tr>
+          <td><label for="empresa">Empresa usuaria:</label></td>
+        </tr>
+        <tr>
+          <td><input type="text" name="empresa" id="empresa" required></td>
+        </tr>
+        <tr>
+          <td><label for="fecha">Fecha:</label></td>
+        </tr>
+        <tr>
+          <td><input type="date" name="fecha" id="fecha" required></td>
+        </tr>
+        <tr>
+          <td><label for="producto">Producto:</label></td>
+        </tr>
+        <tr>
+          <td><input type="text" name="producto" id="producto" required></td>
+        </tr>
+      </table>
+
+      <div class="tarjeta-asistencia">
+        <table>
+          <tr>
+            <td style="text-align: center;">
+              <label for="asistencia">Asistencia:</label>
+              <input type="checkbox" id="asistencia" name="asistencia" value="si">
+            </td>
+            <td colspan="2">
+              <label for="nombre">Nombre completo:</label>
+              <input type="text" id="nombre" name="nombre" required>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <label for="dni">DNI:</label>
+              <input type="text" id="dni" name="dni" required>
+            </td>
+            <td>
+              <label for="bandejas">Bandejas:</label>
+              <input type="text" id="bandejas" name="bandejas" required>
+            </td>
+            <td>
+              <label for="horas">Horas:</label>
+              <input type="text" id="horas" name="horas" required>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="3">
+              <label for="observaciones">Observaciones:</label>
+              <input type="text" id="observaciones" name="observaciones" >
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <button type="submit" name="enviar">Guardar</button>
+    </form>
+  </div>
+
+  <?php 
+  if(isset($_POST['enviar'])) {
+      $nombre_encargado = strip_tags($_POST['nombre_encargado']);
+      $empresa = strip_tags($_POST['empresa']);
+      $fecha = strip_tags($_POST['fecha']);
+      $producto = strip_tags($_POST['producto']);
+      $asistencia = isset($_POST['asistencia']) ? "si" : "no";
+      $dni = strip_tags($_POST['dni']);
+      $nombre = strip_tags($_POST['nombre']);
+      $bandejas = strip_tags($_POST['bandejas']);
+      $horas = strip_tags($_POST['horas']);
+      $observaciones = strip_tags($_POST['observaciones']) ?? "";
+
+      include("conexion_bd.php");
+      $nombre_encargado=mysqli_real_escape_string($conexion, $nombre_encargado);
+      $empresa=mysqli_real_escape_string($conexion, $empresa);
+      $fecha=mysqli_real_escape_string($conexion, $fecha);
+      $producto=mysqli_real_escape_string($conexion, $producto);
+      $dni=mysqli_real_escape_string($conexion, $dni);
+      $nombre=mysqli_real_escape_string($conexion, $nombre);
+      $bandejas=mysqli_real_escape_string($conexion, $bandejas);
+      $horas=mysqli_real_escape_string($conexion, $horas);
+      $observaciones=mysqli_real_escape_string($conexion, $observaciones);
+
+      $consulta = "INSERT INTO asistencias VALUES (NULL, '$nombre_encargado', '$empresa', '$fecha', '$producto', '$asistencia','$nombre', '$dni', '$bandejas', '$horas', '$observaciones')";
+      mysqli_query($conexion, $consulta);
+      mysqli_close($conexion);
+      echo "<p style='margin: 3rem auto; color: green; font-weight: bold; text-align: center;'>Asistencia guardada correctamente</p>";
+>>>>>>> 0934a9c38e291357db81c4f3a13db2670192aa1a
   }
   ?>
 </div>
@@ -441,3 +552,4 @@ document.addEventListener('click', function (e) {
 
 </body>
 </html>
+
