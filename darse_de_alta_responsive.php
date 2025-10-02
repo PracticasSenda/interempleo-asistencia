@@ -201,21 +201,37 @@ include("validar_sesion.php");
     </form>
 
     <?php
-    if (isset($_POST['enviar'])) {
-        $nombre = strip_tags($_POST['nombre']);
-        $apellidos = strip_tags($_POST['apellidos']);
-        $dni = strip_tags($_POST['dni']);
-       
-        include("conexion_bd.php");
-        $nombre=mysqli_real_escape_string($conexion, $nombre);
-        $apellidos=mysqli_real_escape_string($conexion, $apellidos);
-        $dni=mysqli_real_escape_string($conexion, $dni);
+if (isset($_POST['enviar'])) {
+    $nombre = strip_tags($_POST['nombre']);
+    $apellidos = strip_tags($_POST['apellidos']);
+    $dni = strip_tags($_POST['dni']);
+
+    include("conexion_bd.php");
+
+    // Limpiar entradas
+    $nombre = mysqli_real_escape_string($conexion, $nombre);
+    $apellidos = mysqli_real_escape_string($conexion, $apellidos);
+    $dni = mysqli_real_escape_string($conexion, $dni);
+
+    // Verificar si ya existe el trabajador
+    $consulta_existencia = "SELECT * FROM trabajadores WHERE dni = '$dni'";
+    $resultado = mysqli_query($conexion, $consulta_existencia);
+
+    if (mysqli_num_rows($resultado) > 0) {
+        echo "<p style='margin-top: 1rem; color: red; font-weight: bold;'>Este usuario ya ha sido registrado</p>";
+    } else {
         $consulta = "INSERT INTO trabajadores VALUES (NULL, '$nombre', '$apellidos', '$dni')";
-        mysqli_query($conexion, $consulta);
-        mysqli_close($conexion);
-        echo "<p style='margin-top: 1rem; color: green; font-weight: bold;'>Usuario registrado correctamente</p>";
+        if (mysqli_query($conexion, $consulta)) {
+            echo "<p style='margin-top: 1rem; color: green; font-weight: bold;'>Usuario registrado correctamente</p>";
+        } else {
+            echo "<p style='margin-top: 1rem; color: red; font-weight: bold;'>Error al registrar usuario</p>";
+        }
     }
-    ?>
+
+    mysqli_close($conexion);
+}
+?>
+
   </div>
 </body>
 </html>
