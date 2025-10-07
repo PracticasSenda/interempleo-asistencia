@@ -1,4 +1,5 @@
 <?php
+session_start(); // para mostrar nombre del encargado si está logueado
 include("conexion_bd.php");
 
 if (!isset($_GET['id_listado']) || empty($_GET['id_listado'])) {
@@ -7,117 +8,185 @@ if (!isset($_GET['id_listado']) || empty($_GET['id_listado'])) {
 
 $id_listado = intval($_GET['id_listado']);
 
-// Consulta para obtener datos de asistencias según el listado
-$sql = "SELECT a.id, a.empresa, a.fecha, a.producto, a.asistencia, t.nombre AS nombre_trabajador, a.dni, a.bandeja, a.horas, a.observaciones
+// Consulta de datos
+$sql = "SELECT a.id, a.empresa, a.fecha, a.producto, a.asistencia,
+               t.nombre AS nombre_trabajador, a.dni, a.bandeja, a.horas, a.observaciones
         FROM asistencias a
         JOIN trabajadores t ON a.id_trabajador = t.id
         WHERE a.id_listado = $id_listado";
 
 $result = mysqli_query($conexion, $sql);
-
 if (!$result) {
     die("Error en la consulta: " . mysqli_error($conexion));
 }
 
-// Encabezados para descarga CSV
-header('Content-Type: text/csv; charset=utf-8');
-header('Content-Disposition: attachment; filename=asistencias_listado_' . $id_listado . '.csv');
+require('fpdf/fpdf.php');
 
-$output = fopen('php://output', 'w');
-
-// Cabecera CSV
-fputcsv($output, ['ID', 'Empresa', 'Fecha', 'Producto', 'Asistencia', 'Nombre Trabajador', 'DNI', 'Bandeja', 'Horas', 'Observaciones']);
-
-// Datos
-while ($row = mysqli_fetch_assoc($result)) {
-    fputcsv($output, [
-        $row['id'],
-        $row['empresa'],
-        $row['fecha'],
-        $row['producto'],
-        $row['asistencia'],
-        $row['nombre_trabajador'],
-        $row['dni'],
-        $row['bandeja'],
-        $row['horas'],
-        $row['observaciones']
-    ]);
-}
-
-fclose($output);
-mysqli_close($conexion);
-exit;
-?>
-
-
-
-
-
-<?php
-require('fpdf186/fpdf.php'); // asegúrate de tener la carpeta fpdf o cambia la ruta según corresponda
-include("conexion_bd.php");
-
-// Recibir parámetros
-$id_listado = $_GET['id_listado'] ?? '';
-$fecha = $_GET['fecha'] ?? '';
-
-// Consultar los datos del listado
-$query = "SELECT t.nombre, t.apellidos, a.hora_entrada, a.hora_salida, a.empresa, a.producto 
-          FROM asistencias a
-          INNER JOIN trabajadores t ON a.id_trabajador = t.id
-          WHERE a.id_listado = '$id_listado'";
-$result = mysqli_query($conexion, $query);
-
-// Crear PDF limpio
-class PDF extends FPDF {
-    function Header() {
-        $this->SetFont('Arial','B',14);
-        $this->Cell(0,10,'Listado de Asistencia',0,1,'C');
-        $this->Ln(5);
+class PDF extends FPDF
+{
+    function Header()
+{
+    // Logo
+    if (file_exists('logo.png')) {
+        $this->Image('logo.png', 10, 6, 20);
     }
 
-    function Footer() {
+    // Fuente del título
+    $this->SetFont('Arial', 'B', 16);
+
+    // Calcula ancho del texto y posición centrada
+    $titulo = utf8_decode('Listado de Asistencias');
+    $ancho = $this->GetStringWidth($titulo) + 6;
+    $this->SetX(($this->w - $ancho) / 2); // centrado horizontal real
+    $this->Cell($ancho, 10, $titulo, 0, 1, 'C');
+
+    $this->Ln(4);
+
+    // Encargado y fecha
+    $this->SetFont('Arial', '', 10);
+    $encargado = isset($_SESSION['nombre']) ? $_SESSION['nombre'] : 'Desconocido';
+    $fecha = date('d/m/Y');
+    $textoInfo = utf8_decode("Encargado: $encargado — Generado el $fecha");
+
+    // Centrar también esta línea
+    $anchoInfo = $this->GetStringWidth($textoInfo) + 6;
+    $this->SetX(($this->w - $anchoInfo) / 2);
+    $this->Cell($anchoInfo, 8, $textoInfo, 0, 1, 'C');
+
+    $this->Ln(5);
+}
+
+
+    function Footer()
+    {
         $this->SetY(-15);
-        $this->SetFont('Arial','I',8);
-        $this->Cell(0,10,'Pagina '.$this->PageNo().'/{nb}',0,0,'C');
+        $this->SetFont('Arial', 'I', 8);
+        $this->Cell(0, 10, utf8_decode('Página ') . $this->PageNo(), 0, 0, 'C');
+    }
+
+    // ✅ Tabla profesional con ajuste automático
+    function TablaAsistencias($header, $data)
+    {
+        // Cabecera
+        $this->SetFillColor(52, 73, 94);
+        $this->SetTextColor(255);
+        $this->SetFont('Arial', 'B', 9);
+
+        // Anchos base (proporcionales)
+        $w = [20, 20, 25, 18, 30, 22, 20, 15, 55];
+
+        // Escalar automáticamente al ancho imprimible
+        $available = $this->w - $this->lMargin - $this->rMargin; // ancho útil (~190mm)
+        $total = array_sum($w);
+        if ($total > 0 && $total != $available) {
+            $scale = $available / $total;
+            foreach ($w as $i => $wi) {
+                $w[$i] = $wi * $scale;
+            }
+        }
+
+        // Cabecera de tabla
+        for ($i = 0; $i < count($header); $i++) {
+            $this->Cell($w[$i], 7, utf8_decode($header[$i]), 1, 0, 'C', true);
+        }
+        $this->Ln();
+
+        // Cuerpo
+        $this->SetFont('Arial', '', 8);
+        $this->SetFillColor(245, 245, 245);
+        $this->SetTextColor(0);
+        $fill = false;
+
+        foreach ($data as $row) {
+            $x = $this->GetX();
+            $y = $this->GetY();
+
+            // Texto Observaciones y altura dinámica
+            $obs = utf8_decode($row['observaciones']);
+            $nb  = $this->NbLines($w[8], $obs);
+            $h   = 6 * max(1, $nb);
+
+            // Ocho primeras celdas
+            $this->Cell($w[0], $h, utf8_decode($row['empresa']),            1, 0, 'C', $fill);
+            $this->Cell($w[1], $h, utf8_decode($row['fecha']),              1, 0, 'C', $fill);
+            $this->Cell($w[2], $h, utf8_decode($row['producto']),           1, 0, 'C', $fill);
+            $this->Cell($w[3], $h, utf8_decode($row['asistencia']),         1, 0, 'C', $fill);
+            $this->Cell($w[4], $h, utf8_decode($row['nombre_trabajador']),  1, 0, 'C', $fill);
+            $this->Cell($w[5], $h, utf8_decode($row['dni']),                1, 0, 'C', $fill);
+            $this->Cell($w[6], $h, utf8_decode($row['bandeja']),            1, 0, 'C', $fill);
+            $this->Cell($w[7], $h, utf8_decode($row['horas']),              1, 0, 'C', $fill);
+
+            // Observaciones con salto de línea
+            $this->MultiCell($w[8], 6, $obs, 1, 'L', $fill);
+
+            // Avanzar correctamente
+            $this->SetXY($x, $y + $h);
+            $fill = !$fill;
+        }
+
+        // Línea de cierre
+        $this->Cell(array_sum($w), 0, '', 'T');
+        $this->Ln(2);
+    }
+
+    // ✅ Función auxiliar para calcular número de líneas (MultiCell)
+    function NbLines($w, $txt)
+    {
+        $cw = &$this->CurrentFont['cw'];
+        if ($w == 0)
+            $w = $this->w - $this->rMargin - $this->x;
+        $wmax = ($w - 2 * $this->cMargin) * 1000 / $this->FontSize;
+        $s = str_replace("\r", '', $txt);
+        $nb = strlen($s);
+        if ($nb > 0 && $s[$nb - 1] == "\n")
+            $nb--;
+        $sep = -1;
+        $i = 0;
+        $j = 0;
+        $l = 0;
+        $nl = 1;
+        while ($i < $nb) {
+            $c = $s[$i];
+            if ($c == "\n") {
+                $i++;
+                $sep = -1;
+                $j = $i;
+                $l = 0;
+                $nl++;
+                continue;
+            }
+            if ($c == ' ')
+                $sep = $i;
+            $l += $cw[$c];
+            if ($l > $wmax) {
+                if ($sep == -1) {
+                    if ($i == $j)
+                        $i++;
+                } else
+                    $i = $sep + 1;
+                $sep = -1;
+                $j = $i;
+                $l = 0;
+                $nl++;
+            } else
+                $i++;
+        }
+        return $nl;
     }
 }
 
+// Crear el PDF (modo retrato, puedes usar 'L' para horizontal)
 $pdf = new PDF();
-$pdf->AliasNbPages();
 $pdf->AddPage();
-$pdf->SetFont('Arial','',11);
 
-// Información general
-$pdf->Cell(0,10,"Fecha del listado: $fecha",0,1,'L');
-$pdf->Ln(4);
+$header = ['Empresa', 'Fecha', 'Producto', 'Asistencia', 'Trabajador', 'DNI', 'Bandeja', 'Horas', 'Observaciones'];
 
-// Encabezado de tabla
-$pdf->SetFont('Arial','B',11);
-$pdf->SetFillColor(240,240,240);
-$pdf->Cell(40,10,'Nombre',1,0,'C',true);
-$pdf->Cell(40,10,'Apellidos',1,0,'C',true);
-$pdf->Cell(30,10,'Entrada',1,0,'C',true);
-$pdf->Cell(30,10,'Salida',1,0,'C',true);
-$pdf->Cell(25,10,'Empresa',1,0,'C',true);
-$pdf->Cell(25,10,'Producto',1,1,'C',true);
-
-// Filas de datos
-$pdf->SetFont('Arial','',10);
-if ($result && mysqli_num_rows($result) > 0) {
-    while ($fila = mysqli_fetch_assoc($result)) {
-        $pdf->Cell(40,8,$fila['nombre'],1);
-        $pdf->Cell(40,8,$fila['apellidos'],1);
-        $pdf->Cell(30,8,$fila['hora_entrada'],1);
-        $pdf->Cell(30,8,$fila['hora_salida'],1);
-        $pdf->Cell(25,8,$fila['empresa'],1);
-        $pdf->Cell(25,8,$fila['producto'],1);
-        $pdf->Ln();
-    }
-} else {
-    $pdf->Cell(0,10,'No hay registros disponibles.',1,1,'C');
+$data = [];
+while ($row = mysqli_fetch_assoc($result)) {
+    $data[] = $row;
 }
 
-// Salida del PDF
-$pdf->Output('I', "listado_$id_listado.pdf");
+$pdf->TablaAsistencias($header, $data);
+$pdf->Output('D', 'asistencias_listado_' . $id_listado . '.pdf');
+exit();
 ?>
