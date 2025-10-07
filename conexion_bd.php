@@ -1,6 +1,6 @@
 <?php
 $host = "192.168.1.225";  // Servidor remoto
-$usuario = "root2";       // Usuario de la base de datos
+$usuario = "root3";       // Usuario de la base de datos
 $clave = ""; // Aquí pon la contraseña real
 $base_datos = "usuarios"; // Por ejemplo 'interempleo' o 'asistencias'
 
