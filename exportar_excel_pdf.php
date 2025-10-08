@@ -315,7 +315,6 @@ tbody tr.selected {
     <form id="form-buscar" method="GET" action="buscar_listado_por_fecha.php">
       <label for="fecha_buscar">Buscar listados por fecha:</label>
       <input type="date" id="fecha_buscar" name="fecha" required />
-      <button type="submit">Buscar</button>
     </form>
 
     <h2 class="titulo-listado">Selecciona un listado</h2>

@@ -166,7 +166,7 @@ a {
 
     <!-- Barra superior -->
     <div class="barra-superior">
-        <p><span>Inter</span>empleo - Recuperar contraseña</p>
+        <p style="color:white" ><span>Inter</span>empleo - Recuperar contraseña</p>
     </div>
 
     <!-- Contenido principal -->
