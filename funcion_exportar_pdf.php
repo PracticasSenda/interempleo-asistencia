@@ -8,6 +8,21 @@ if (!isset($_GET['id_listado']) || empty($_GET['id_listado'])) {
 
 $id_listado = intval($_GET['id_listado']);
 
+// Obtener el nombre del encargado desde la tabla usuarios
+$sql_encargado = "SELECT u.nombre 
+                  FROM listados_asistencias la
+                  JOIN usuarios u ON la.id_encargado = u.id
+                  WHERE la.id = $id_listado
+                  LIMIT 1";
+
+$result_encargado = mysqli_query($conexion, $sql_encargado);
+if ($result_encargado && mysqli_num_rows($result_encargado) > 0) {
+    $row_encargado = mysqli_fetch_assoc($result_encargado);
+    $_SESSION['encargado'] = $row_encargado['nombre'];
+} else {
+    $_SESSION['encargado'] = 'Desconocido';
+}
+
 // Consulta de datos
 $sql = "SELECT a.id, a.empresa, a.fecha, a.producto, a.asistencia,
                t.nombre AS nombre_trabajador, a.dni, a.bandeja, a.horas, a.observaciones
@@ -25,37 +40,30 @@ require('fpdf/fpdf.php');
 class PDF extends FPDF
 {
     function Header()
-{
-    // Logo
-    if (file_exists('logo.png')) {
-        $this->Image('logo.png', 10, 6, 20);
+    {
+        if (file_exists('logo.png')) {
+            $this->Image('logo.png', 10, 6, 20);
+        }
+
+        $this->SetFont('Arial', 'B', 16);
+        $titulo = utf8_decode('Listado de Asistencias');
+        $ancho = $this->GetStringWidth($titulo) + 6;
+        $this->SetX(($this->w - $ancho) / 2);
+        $this->Cell($ancho, 10, $titulo, 0, 1, 'C');
+
+        $this->Ln(4);
+
+        $this->SetFont('Arial', '', 10);
+        $encargado = isset($_SESSION['encargado']) ? $_SESSION['encargado'] : 'Desconocido';
+        $fecha = date('d/m/Y');
+        $textoInfo = utf8_decode("Encargado: $encargado - Generado el $fecha");
+
+        $anchoInfo = $this->GetStringWidth($textoInfo) + 6;
+        $this->SetX(($this->w - $anchoInfo) / 2);
+        $this->Cell($anchoInfo, 8, $textoInfo, 0, 1, 'C');
+
+        $this->Ln(5);
     }
-
-    // Fuente del título
-    $this->SetFont('Arial', 'B', 16);
-
-    // Calcula ancho del texto y posición centrada
-    $titulo = utf8_decode('Listado de Asistencias');
-    $ancho = $this->GetStringWidth($titulo) + 6;
-    $this->SetX(($this->w - $ancho) / 2); // centrado horizontal real
-    $this->Cell($ancho, 10, $titulo, 0, 1, 'C');
-
-    $this->Ln(4);
-
-    // Encargado y fecha
-    $this->SetFont('Arial', '', 10);
-    $encargado = isset($_SESSION['nombre']) ? $_SESSION['nombre'] : 'Desconocido';
-    $fecha = date('d/m/Y');
-    $textoInfo = utf8_decode("Encargado: $encargado - Generado el $fecha");
-
-    // Centrar también esta línea
-    $anchoInfo = $this->GetStringWidth($textoInfo) + 6;
-    $this->SetX(($this->w - $anchoInfo) / 2);
-    $this->Cell($anchoInfo, 8, $textoInfo, 0, 1, 'C');
-
-    $this->Ln(5);
-}
-
 
     function Footer()
     {
@@ -64,19 +72,15 @@ class PDF extends FPDF
         $this->Cell(0, 10, utf8_decode('Página ') . $this->PageNo(), 0, 0, 'C');
     }
 
-    // ✅ Tabla profesional con ajuste automático
     function TablaAsistencias($header, $data)
     {
-        // Cabecera
         $this->SetFillColor(52, 73, 94);
         $this->SetTextColor(255);
         $this->SetFont('Arial', 'B', 9);
 
-        // Anchos base (proporcionales)
         $w = [20, 20, 25, 18, 30, 22, 20, 15, 55];
 
-        // Escalar automáticamente al ancho imprimible
-        $available = $this->w - $this->lMargin - $this->rMargin; // ancho útil (~190mm)
+        $available = $this->w - $this->lMargin - $this->rMargin;
         $total = array_sum($w);
         if ($total > 0 && $total != $available) {
             $scale = $available / $total;
@@ -85,13 +89,11 @@ class PDF extends FPDF
             }
         }
 
-        // Cabecera de tabla
         for ($i = 0; $i < count($header); $i++) {
             $this->Cell($w[$i], 7, utf8_decode($header[$i]), 1, 0, 'C', true);
         }
         $this->Ln();
 
-        // Cuerpo
         $this->SetFont('Arial', '', 8);
         $this->SetFillColor(245, 245, 245);
         $this->SetTextColor(0);
@@ -101,12 +103,10 @@ class PDF extends FPDF
             $x = $this->GetX();
             $y = $this->GetY();
 
-            // Texto Observaciones y altura dinámica
             $obs = utf8_decode($row['observaciones']);
             $nb  = $this->NbLines($w[8], $obs);
             $h   = 6 * max(1, $nb);
 
-            // Ocho primeras celdas
             $this->Cell($w[0], $h, utf8_decode($row['empresa']),            1, 0, 'C', $fill);
             $this->Cell($w[1], $h, utf8_decode($row['fecha']),              1, 0, 'C', $fill);
             $this->Cell($w[2], $h, utf8_decode($row['producto']),           1, 0, 'C', $fill);
@@ -116,20 +116,15 @@ class PDF extends FPDF
             $this->Cell($w[6], $h, utf8_decode($row['bandeja']),            1, 0, 'C', $fill);
             $this->Cell($w[7], $h, utf8_decode($row['horas']),              1, 0, 'C', $fill);
 
-            // Observaciones con salto de línea
             $this->MultiCell($w[8], 6, $obs, 1, 'L', $fill);
-
-            // Avanzar correctamente
             $this->SetXY($x, $y + $h);
             $fill = !$fill;
         }
 
-        // Línea de cierre
         $this->Cell(array_sum($w), 0, '', 'T');
         $this->Ln(2);
     }
 
-    // ✅ Función auxiliar para calcular número de líneas (MultiCell)
     function NbLines($w, $txt)
     {
         $cw = &$this->CurrentFont['cw'];
@@ -175,11 +170,10 @@ class PDF extends FPDF
     }
 }
 
-// Crear el PDF (modo retrato, puedes usar 'L' para horizontal)
 $pdf = new PDF();
 $pdf->AddPage();
 
-$header = ['Empresa', 'Fecha', 'Producto', 'Asistencia', 'Trabajador', 'DNI', 'Bandeja', 'Horas', 'Observaciones'];
+$header = ['Empresa', 'Fecha', 'Producto', 'Asistencia', 'Trabajador', 'DNI', 'Bandejas', 'Horas', 'Observaciones'];
 
 $data = [];
 while ($row = mysqli_fetch_assoc($result)) {

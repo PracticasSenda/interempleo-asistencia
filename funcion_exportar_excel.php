@@ -32,7 +32,7 @@ $sheet = $spreadsheet->getActiveSheet();
 $sheet->setTitle('Listado de Asistencia');
 
 // Cabeceras
-$headers = ['ID', 'Empresa', 'Fecha', 'Producto', 'Asistencia', 'Nombre Trabajador', 'DNI', 'Bandeja', 'Horas', 'Observaciones'];
+$headers = ['ID', 'Empresa', 'Fecha', 'Producto', 'Asistencia', 'Nombre Trabajador', 'DNI', 'Bandejas', 'Horas', 'Observaciones'];
 $sheet->fromArray($headers, NULL, 'A1');
 
 // Estilo para la cabecera
