@@ -116,7 +116,19 @@ $encargados = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
       footer {
           margin-top:2rem; text-align:center; font-size:0.9rem; color:#666; padding:1rem;
           border-top:1px solid var(--color-borde);
-      }
+      }input,
+select,
+textarea {
+    width: 100%;
+    max-width: 100%;
+    padding: 0.6rem;
+    border: none;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    box-sizing: border-box; /* Asegura que padding no aumente el tamaño */
+}
+
   </style>
 </head>
 <body>

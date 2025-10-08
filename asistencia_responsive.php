@@ -57,6 +57,63 @@ include("validar_sesion.php");
       border-radius: 4px;
       font-size: 0.95rem;
     }
+    .menu-toggle {
+  font-size: 1.8rem;
+  cursor: pointer;
+  margin-right: 1rem;
+  user-select: none;
+}
+
+.menu-dropdown {
+  display: none;
+  flex-direction: column;
+  position: absolute;
+  top: 70px; /* ajusta según el alto de la barra */
+  left: 1rem;
+  background-color: white;
+  border: 1px solid #ccc;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  z-index: 9999;
+  padding: 1rem;
+  border-radius: 6px;
+  min-width: 200px;
+}
+
+.menu-dropdown a {
+  padding: 0.5rem 0;
+  color: var(--color-texto);
+  text-decoration: none;
+  border-bottom: 1px solid #eee;
+}
+
+.menu-dropdown a:last-child {
+  border-bottom: none;
+}
+
+.menu-dropdown a:hover {
+  color: var(--color-principal);
+}
+
+/* Mostrar el menú cuando se activa */
+.menu-dropdown.show {
+  display: flex;
+}
+
+/* Ajustes responsive */
+@media (max-width: 768px) {
+  .barra-superior {
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .barra-superior p {
+    font-size: 1.2rem;
+  }
+}
+
 
     /* CONTENIDO */
     .contenido {
@@ -246,18 +303,22 @@ include("validar_sesion.php");
 <body>
 
 <div class="barra-superior">
-  <p><span>Inter</span>empleo - Asistencia</p>
-  <a href="darse_de_alta_responsive.php">Darse de alta</a>
-  <a href="darse_de_baja_responsive.php">Darse de baja</a>
-  <a href="cerrar_sesion.php">Cerrar sesión</a>
-  <a href="exportar_excel_pdf.php">Exportar excel</a>
-  <?php
-  if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'administrador') {
-      echo '<a href="alta-baja-encargados.php"> Gestion de encargados</a>';
-     
-    
+  <div name="en_linea" style="text-align:left">
+  <div style ="display:inline-block; width:10%; margin-right:40%; vertical-align:top;" class="menu-toggle" onclick="toggleMenu()">☰</div>
+  <p style="text-align:center; display:inline-block; width:45% ;"><span>Inter</span>empleo - Asistencia</p>
+</div>
+
+  <div class="menu-dropdown" id="menuDropdown">
+    <a href="darse_de_alta_responsive.php">Alta - Trabajadores</a>
+    <a href="darse_de_baja_responsive.php">Baja - Trabajadores</a>
+    <a href="exportar_excel_pdf.php">Exportar excel/PDF</a>
+    <a href="cerrar_sesion.php">Cerrar sesión</a>
+    <?php
+    if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'administrador') {
+        echo '<a href="alta-baja-encargados.php">Gestión de encargados</a>';
     }
     ?>
+  </div>
 </div>
 
   
@@ -556,6 +617,23 @@ document.addEventListener('click', function (e) {
   }
 });
 </script>
+<script>
+function toggleMenu() {
+  const menu = document.getElementById('menuDropdown');
+  menu.classList.toggle('show');
+}
+
+// Cierra el menú si haces clic fuera
+document.addEventListener('click', function(e) {
+  const menu = document.getElementById('menuDropdown');
+  const toggle = document.querySelector('.menu-toggle');
+
+  if (!menu.contains(e.target) && e.target !== toggle) {
+    menu.classList.remove('show');
+  }
+});
+</script>
+
 
 </body>
 </html>

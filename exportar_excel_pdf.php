@@ -328,7 +328,6 @@ include("validar_sesion.php");
     <form id="form-buscar" method="GET" action="buscar_listado_por_fecha.php">
       <label for="fecha_buscar">Buscar listados por fecha:</label>
       <input type="date" id="fecha_buscar" name="fecha" required />
-      <button type="submit">Buscar</button>
     </form>
 
     <h2 class="titulo-listado">Selecciona un listado</h2>
@@ -348,7 +347,7 @@ include("validar_sesion.php");
     <form id="form_exportar" method="get" action="funcion_exportar_excel.php" target="_blank">
       <input type="hidden" name="id_listado" id="id_listado" />
       <button type="submit" id="btn_exportar" disabled>Exportar listado seleccionado a Excel</button>
-      <button type="button" id="btn_exportar_pdf" disabled>Exportar listado seleccionado a PDF</button>
+      <button type="button" id="btn_exportar_pdf" disabled>Exportar a PDF</button>
     </form>
 
   </div>
