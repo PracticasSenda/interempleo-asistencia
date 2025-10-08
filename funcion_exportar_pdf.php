@@ -46,7 +46,7 @@ class PDF extends FPDF
     $this->SetFont('Arial', '', 10);
     $encargado = isset($_SESSION['nombre']) ? $_SESSION['nombre'] : 'Desconocido';
     $fecha = date('d/m/Y');
-    $textoInfo = utf8_decode("Encargado: $encargado — Generado el $fecha");
+    $textoInfo = utf8_decode("Encargado: $encargado - Generado el $fecha");
 
     // Centrar también esta línea
     $anchoInfo = $this->GetStringWidth($textoInfo) + 6;

@@ -250,7 +250,7 @@ include("validar_sesion.php");
   <a href="darse_de_alta_responsive.php">Darse de alta</a>
   <a href="darse_de_baja_responsive.php">Darse de baja</a>
   <a href="cerrar_sesion.php">Cerrar sesión</a>
-  <a href="exportar_excel.php">Exportar excel</a>
+  <a href="exportar_excel_pdf.php">Exportar excel</a>
   <?php
   if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'administrador') {
       echo '<a href="alta-baja-encargados.php"> Gestion de encargados</a>';

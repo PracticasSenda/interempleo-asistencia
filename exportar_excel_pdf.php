@@ -424,14 +424,12 @@ include("validar_sesion.php");
   });
 
 
-btnExportarPDF.addEventListener('click', () => {
-  const idListado = inputIdListado.value;
-  if (!idListado) return alert('Selecciona un listado primero.');
+  btnExportarPDF.addEventListener('click', () => {
+    const idListado = inputIdListado.value;
+    if (!idListado) return alert('Selecciona un listado primero.');
 
-  window.open('funcion_exportar_pdf.php?id_listado=' + idListado, '_blank');
-});
-
-
+    window.open('funcion_exportar_pdf.php?id_listado=' + idListado, '_blank');
+  });
 </script>
 
 </body>
