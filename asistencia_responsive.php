@@ -309,8 +309,7 @@ include("validar_sesion.php");
 </div>
 
   <div class="menu-dropdown" id="menuDropdown">
-    <a href="darse_de_alta_responsive.php">Alta - Trabajadores</a>
-    <a href="darse_de_baja_responsive.php">Baja - Trabajadores</a>
+    <a href="alta-baja-trabajadores.php">Alta - Trabajadores</a>
     <a href="exportar_excel_pdf.php">Exportar excel/PDF</a>
     <a href="cerrar_sesion.php">Cerrar sesión</a>
     <?php
