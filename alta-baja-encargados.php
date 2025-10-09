@@ -38,11 +38,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       // ✅ Ya existe → reactivar y actualizar contraseña
       $stmtCheck->close();
       $stmtUpdate = $conexion->prepare("
-            UPDATE usuarios 
-            SET activo = 1, `contraseña` = ?, nombre = ?, apellidos = ?
-            WHERE id = ?
+          UPDATE usuarios 
+          SET activo = 1, `contraseña` = ?
+          WHERE id = ?
+
         ");
-      $stmtUpdate->bind_param("sssi", $password, $nombre, $apellidos, $idExistente);
+      $stmtUpdate->bind_param("sssi", $password, $idExistente);
       if ($stmtUpdate->execute()) {
         if ($activo == 0) {
           $mensaje = "<p style='color:green;font-weight:bold;'>🔄 Encargado reactivado correctamente</p>";
@@ -101,21 +102,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Obtener lista encargados
-// 👇 Nuevo filtro opcional
-$ver_todos = isset($_GET['ver']) && $_GET['ver'] === 'todos';
+// 🧩 NUEVOS FILTROS
+$filtro_dni = isset($_GET['dni']) ? trim($_GET['dni']) : '';
+$filtro_estado = isset($_GET['estado']) ? $_GET['estado'] : 'activos';
 
-// Si el parámetro ?ver=todos está presente, no filtramos por activo
-if ($ver_todos) {
-  $sql = "SELECT id, nombre, apellidos, dni, activo
-          FROM usuarios
-          WHERE rol = 'encargado'
-          ORDER BY apellidos, nombre ASC";
-} else {
-  $sql = "SELECT id, nombre, apellidos, dni, activo
-          FROM usuarios
-          WHERE rol = 'encargado' AND activo = 1
-          ORDER BY apellidos, nombre ASC";
+// 🔧 Base de la consulta
+$sql = "SELECT id, nombre, apellidos, dni, activo
+        FROM usuarios
+        WHERE rol = 'encargado'";
+
+// 🧠 Aplicamos filtros dinámicamente
+if ($filtro_estado === 'activos') {
+  $sql .= " AND activo = 1";
+} elseif ($filtro_estado === 'inactivos') {
+  $sql .= " AND activo = 0";
 }
+
+if ($filtro_dni !== '') {
+  $dni_like = $conexion->real_escape_string($filtro_dni);
+  $sql .= " AND dni LIKE '%$dni_like%'";
+}
+
+$sql .= " ORDER BY activo DESC, apellidos, nombre ASC";
 
 $result = $conexion->query($sql);
 $encargados = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
@@ -212,14 +220,6 @@ $encargados = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
       margin-bottom: 0.3rem;
     }
 
-    input,
-    select {
-      width: 100%;
-      padding: 0.6rem;
-      border: none;
-      border-radius: 4px;
-      margin-bottom: 1rem;
-    }
 
     button {
       width: 100%;
@@ -332,13 +332,28 @@ $encargados = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
 
     <?php elseif ($accion === 'listar'): ?>
       <h2>Lista de encargados</h2>
-      <div style="text-align:center; margin-bottom:1rem;">
-        <?php if ($ver_todos): ?>
-          <a href="?accion=listar" style="text-decoration:none; color:white; background:#FF671D; padding:0.5rem 1rem; border-radius:4px;">👁️ Mostrar solo activos</a>
-        <?php else: ?>
-          <a href="?accion=listar&ver=todos" style="text-decoration:none; color:white; background:#FF671D; padding:0.5rem 1rem; border-radius:4px;">👁️ Mostrar también inactivos</a>
-        <?php endif; ?>
-      </div>
+      <form method="get" style="text-align:center; margin-bottom:1rem;">
+        <input type="hidden" name="accion" value="listar">
+
+        <!-- Filtro por DNI -->
+        <input type="text" name="dni" placeholder="Buscar por DNI..."
+          value="<?= htmlspecialchars($filtro_dni) ?>"
+          style="padding:0.4rem; border:1px solid #ccc; border-radius:4px; width:180px;">
+
+        <!-- Filtro por estado -->
+        <select name="estado" style="padding:0.4rem; border:1px solid #ccc; border-radius:4px;">
+          <option value="activos" <?= $filtro_estado === 'activos' ? 'selected' : '' ?>>🟢 Activos</option>
+          <option value="inactivos" <?= $filtro_estado === 'inactivos' ? 'selected' : '' ?>>🔴 Inactivos</option>
+          <option value="todos" <?= $filtro_estado === 'todos' ? 'selected' : '' ?>>👁️ Todos</option>
+        </select>
+
+        <button type="submit" style="background:#FF671D; color:white; border:none; border-radius:4px; padding:0.5rem 1rem; cursor:pointer;">
+          
+        <a href="?accion=listar" style="margin-left:8px; color:#FF671D; text-decoration:none;">🧹 Limpiar</a>
+🔍 Filtrar
+          
+        </button>
+      </form>
 
       <?php if (empty($encargados)): ?>
         <p>No hay encargados registrados.</p>
