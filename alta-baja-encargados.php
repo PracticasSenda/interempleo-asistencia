@@ -12,9 +12,10 @@ $mensaje = "";
 
 // ---- LÓGICA ----
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-if ($accion === 'alta') {
-    $nombre = trim($_POST['nombre']);
-    $apellidos = trim($_POST['apellidos']);
+  if ($accion === 'alta') {
+    // 🔧 Normalizamos los valores para evitar duplicados por mayúsculas o espacios
+    $nombre = ucwords(strtolower(trim($_POST['nombre'])));
+    $apellidos = ucwords(strtolower(trim($_POST['apellidos'])));
     $dni = strtoupper(trim($_POST['dni']));
     $password = $_POST['password'];
 
@@ -33,40 +34,40 @@ if ($accion === 'alta') {
     $stmtCheck->bind_result($idExistente, $activo);
 
     if ($stmtCheck->fetch()) {
-        // ✅ Ya existe → reactivar y actualizar contraseña
-        $stmtCheck->close();
-        $stmtUpdate = $conexion->prepare("
+      // ✅ Ya existe → reactivar y actualizar contraseña
+      $stmtCheck->close();
+      $stmtUpdate = $conexion->prepare("
             UPDATE usuarios 
             SET activo = 1, `contraseña` = ?, nombre = ?, apellidos = ?
             WHERE id = ?
         ");
-        $stmtUpdate->bind_param("sssi", $password, $nombre, $apellidos, $idExistente);
-        if ($stmtUpdate->execute()) {
-            if ($activo == 0) {
-                $mensaje = "<p style='color:green;font-weight:bold;'>🔄 Encargado reactivado correctamente</p>";
-            } else {
-                $mensaje = "<p style='color:orange;font-weight:bold;'>⚠️ El encargado ya estaba activo, se actualizó la contraseña</p>";
-            }
+      $stmtUpdate->bind_param("sssi", $password, $nombre, $apellidos, $idExistente);
+      if ($stmtUpdate->execute()) {
+        if ($activo == 0) {
+          $mensaje = "<p style='color:green;font-weight:bold;'>🔄 Encargado reactivado correctamente</p>";
         } else {
-            $mensaje = "<p style='color:red;font-weight:bold;'>❌ Error al actualizar encargado</p>";
+          $mensaje = "<p style='color:orange;font-weight:bold;'>⚠️ El encargado ya estaba activo, se actualizó la contraseña</p>";
         }
-        $stmtUpdate->close();
+      } else {
+        $mensaje = "<p style='color:red;font-weight:bold;'>❌ Error al actualizar encargado</p>";
+      }
+      $stmtUpdate->close();
     } else {
-        // 🆕 No existe → crear nuevo registro
-        $stmtCheck->close();
-        $stmtInsert = $conexion->prepare("
+      // 🆕 No existe → crear nuevo registro
+      $stmtCheck->close();
+      $stmtInsert = $conexion->prepare("
             INSERT INTO usuarios (nombre, apellidos, dni, rol, `contraseña`, activo)
             VALUES (?, ?, ?, 'encargado', ?, 1)
         ");
-        $stmtInsert->bind_param("ssss", $nombre, $apellidos, $dni, $password);
-        if ($stmtInsert->execute()) {
-            $mensaje = "<p style='color:green;font-weight:bold;'>✅ Encargado registrado correctamente</p>";
-        } else {
-            $mensaje = "<p style='color:red;font-weight:bold;'>❌ Error: " . htmlspecialchars($stmtInsert->error) . "</p>";
-        }
-        $stmtInsert->close();
+      $stmtInsert->bind_param("ssss", $nombre, $apellidos, $dni, $password);
+      if ($stmtInsert->execute()) {
+        $mensaje = "<p style='color:green;font-weight:bold;'>✅ Encargado registrado correctamente</p>";
+      } else {
+        $mensaje = "<p style='color:red;font-weight:bold;'>❌ Error: " . htmlspecialchars($stmtInsert->error) . "</p>";
+      }
+      $stmtInsert->close();
     }
-}
+  }
 
 
   if ($accion === 'baja' && isset($_POST['encargado_id'])) {
