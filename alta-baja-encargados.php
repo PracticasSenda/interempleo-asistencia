@@ -31,6 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ");
     $stmtCheck->bind_param("sss", $nombre, $apellidos, $dni);
     $stmtCheck->execute();
+    $stmtCheck->store_result();  // ✅ Carga los resultados en memoria y libera el cursor
     $stmtCheck->bind_result($idExistente, $activo);
 
     if ($stmtCheck->fetch()) {
@@ -100,11 +101,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Obtener lista encargados
-$result = $conexion->query("SELECT id, nombre, apellidos, dni, activo 
-                            FROM usuarios 
-                            WHERE rol = 'encargado' AND activo = 1
-                            ORDER BY apellidos, nombre ASC");
+// 👇 Nuevo filtro opcional
+$ver_todos = isset($_GET['ver']) && $_GET['ver'] === 'todos';
+
+// Si el parámetro ?ver=todos está presente, no filtramos por activo
+if ($ver_todos) {
+  $sql = "SELECT id, nombre, apellidos, dni, activo
+          FROM usuarios
+          WHERE rol = 'encargado'
+          ORDER BY apellidos, nombre ASC";
+} else {
+  $sql = "SELECT id, nombre, apellidos, dni, activo
+          FROM usuarios
+          WHERE rol = 'encargado' AND activo = 1
+          ORDER BY apellidos, nombre ASC";
+}
+
+$result = $conexion->query($sql);
 $encargados = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -317,6 +332,14 @@ $encargados = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
 
     <?php elseif ($accion === 'listar'): ?>
       <h2>Lista de encargados</h2>
+      <div style="text-align:center; margin-bottom:1rem;">
+        <?php if ($ver_todos): ?>
+          <a href="?accion=listar" style="text-decoration:none; color:white; background:#FF671D; padding:0.5rem 1rem; border-radius:4px;">👁️ Mostrar solo activos</a>
+        <?php else: ?>
+          <a href="?accion=listar&ver=todos" style="text-decoration:none; color:white; background:#FF671D; padding:0.5rem 1rem; border-radius:4px;">👁️ Mostrar también inactivos</a>
+        <?php endif; ?>
+      </div>
+
       <?php if (empty($encargados)): ?>
         <p>No hay encargados registrados.</p>
       <?php else: ?>
