@@ -12,9 +12,10 @@ $mensaje = "";
 
 // ---- LÓGICA ----
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-if ($accion === 'alta') {
-    $nombre = trim($_POST['nombre']);
-    $apellidos = trim($_POST['apellidos']);
+  if ($accion === 'alta') {
+    // 🔧 Normalizamos los valores para evitar duplicados por mayúsculas o espacios
+    $nombre = ucwords(strtolower(trim($_POST['nombre'])));
+    $apellidos = ucwords(strtolower(trim($_POST['apellidos'])));
     $dni = strtoupper(trim($_POST['dni']));
     $password = $_POST['password'];
 
@@ -30,43 +31,44 @@ if ($accion === 'alta') {
     ");
     $stmtCheck->bind_param("sss", $nombre, $apellidos, $dni);
     $stmtCheck->execute();
+    $stmtCheck->store_result();  // ✅ Carga los resultados en memoria y libera el cursor
     $stmtCheck->bind_result($idExistente, $activo);
 
     if ($stmtCheck->fetch()) {
-        // ✅ Ya existe → reactivar y actualizar contraseña
-        $stmtCheck->close();
-        $stmtUpdate = $conexion->prepare("
+      // ✅ Ya existe → reactivar y actualizar contraseña
+      $stmtCheck->close();
+      $stmtUpdate = $conexion->prepare("
             UPDATE usuarios 
             SET activo = 1, `contraseña` = ?, nombre = ?, apellidos = ?
             WHERE id = ?
         ");
-        $stmtUpdate->bind_param("sssi", $password, $nombre, $apellidos, $idExistente);
-        if ($stmtUpdate->execute()) {
-            if ($activo == 0) {
-                $mensaje = "<p style='color:green;font-weight:bold;'>🔄 Encargado reactivado correctamente</p>";
-            } else {
-                $mensaje = "<p style='color:orange;font-weight:bold;'>⚠️ El encargado ya estaba activo, se actualizó la contraseña</p>";
-            }
+      $stmtUpdate->bind_param("sssi", $password, $nombre, $apellidos, $idExistente);
+      if ($stmtUpdate->execute()) {
+        if ($activo == 0) {
+          $mensaje = "<p style='color:green;font-weight:bold;'>🔄 Encargado reactivado correctamente</p>";
         } else {
-            $mensaje = "<p style='color:red;font-weight:bold;'>❌ Error al actualizar encargado</p>";
+          $mensaje = "<p style='color:orange;font-weight:bold;'>⚠️ El encargado ya estaba activo, se actualizó la contraseña</p>";
         }
-        $stmtUpdate->close();
+      } else {
+        $mensaje = "<p style='color:red;font-weight:bold;'>❌ Error al actualizar encargado</p>";
+      }
+      $stmtUpdate->close();
     } else {
-        // 🆕 No existe → crear nuevo registro
-        $stmtCheck->close();
-        $stmtInsert = $conexion->prepare("
+      // 🆕 No existe → crear nuevo registro
+      $stmtCheck->close();
+      $stmtInsert = $conexion->prepare("
             INSERT INTO usuarios (nombre, apellidos, dni, rol, `contraseña`, activo)
             VALUES (?, ?, ?, 'encargado', ?, 1)
         ");
-        $stmtInsert->bind_param("ssss", $nombre, $apellidos, $dni, $password);
-        if ($stmtInsert->execute()) {
-            $mensaje = "<p style='color:green;font-weight:bold;'>✅ Encargado registrado correctamente</p>";
-        } else {
-            $mensaje = "<p style='color:red;font-weight:bold;'>❌ Error: " . htmlspecialchars($stmtInsert->error) . "</p>";
-        }
-        $stmtInsert->close();
+      $stmtInsert->bind_param("ssss", $nombre, $apellidos, $dni, $password);
+      if ($stmtInsert->execute()) {
+        $mensaje = "<p style='color:green;font-weight:bold;'>✅ Encargado registrado correctamente</p>";
+      } else {
+        $mensaje = "<p style='color:red;font-weight:bold;'>❌ Error: " . htmlspecialchars($stmtInsert->error) . "</p>";
+      }
+      $stmtInsert->close();
     }
-}
+  }
 
 
   if ($accion === 'baja' && isset($_POST['encargado_id'])) {
@@ -99,11 +101,25 @@ if ($accion === 'alta') {
 }
 
 // Obtener lista encargados
-$result = $conexion->query("SELECT id, nombre, apellidos, dni, activo 
-                            FROM usuarios 
-                            WHERE rol = 'encargado' AND activo = 1
-                            ORDER BY apellidos, nombre ASC");
+// 👇 Nuevo filtro opcional
+$ver_todos = isset($_GET['ver']) && $_GET['ver'] === 'todos';
+
+// Si el parámetro ?ver=todos está presente, no filtramos por activo
+if ($ver_todos) {
+  $sql = "SELECT id, nombre, apellidos, dni, activo
+          FROM usuarios
+          WHERE rol = 'encargado'
+          ORDER BY apellidos, nombre ASC";
+} else {
+  $sql = "SELECT id, nombre, apellidos, dni, activo
+          FROM usuarios
+          WHERE rol = 'encargado' AND activo = 1
+          ORDER BY apellidos, nombre ASC";
+}
+
+$result = $conexion->query($sql);
 $encargados = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -316,6 +332,14 @@ $encargados = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
 
     <?php elseif ($accion === 'listar'): ?>
       <h2>Lista de encargados</h2>
+      <div style="text-align:center; margin-bottom:1rem;">
+        <?php if ($ver_todos): ?>
+          <a href="?accion=listar" style="text-decoration:none; color:white; background:#FF671D; padding:0.5rem 1rem; border-radius:4px;">👁️ Mostrar solo activos</a>
+        <?php else: ?>
+          <a href="?accion=listar&ver=todos" style="text-decoration:none; color:white; background:#FF671D; padding:0.5rem 1rem; border-radius:4px;">👁️ Mostrar también inactivos</a>
+        <?php endif; ?>
+      </div>
+
       <?php if (empty($encargados)): ?>
         <p>No hay encargados registrados.</p>
       <?php else: ?>
