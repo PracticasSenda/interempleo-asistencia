@@ -3,9 +3,10 @@ include("validar_sesion.php");
 ?>
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dar de alta</title>
 
   <style>
@@ -17,7 +18,9 @@ include("validar_sesion.php");
       --color-input-bg: #F9F9F9;
     }
 
-    *, *::before, *::after {
+    *,
+    *::before,
+    *::after {
       box-sizing: border-box;
     }
 
@@ -60,7 +63,7 @@ include("validar_sesion.php");
       color: white;
       padding: 1.5rem;
       border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       font-size: 1rem;
       margin-bottom: 2rem;
     }
@@ -130,45 +133,47 @@ include("validar_sesion.php");
         padding: 0.8rem;
       }
     }
-        .contenedor-barra {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
 
-.boton-enlace {
-  color: white;
-  background-color: transparent;
-  border: 2px solid white;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  text-decoration: none;
-  font-size: 1rem;
-}
-@media (max-width: 600px) {
-  .contenedor-barra {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
+    .contenedor-barra {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
 
-  .boton-enlace {
-    align-self: flex-end;
-    font-size: 0.9rem;
-    padding: 0.4rem 0.8rem;
-  }
-}
+    .boton-enlace {
+      color: white;
+      background-color: transparent;
+      border: 2px solid white;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      text-decoration: none;
+      font-size: 1rem;
+    }
+
+    @media (max-width: 600px) {
+      .contenedor-barra {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+
+      .boton-enlace {
+        align-self: flex-end;
+        font-size: 0.9rem;
+        padding: 0.4rem 0.8rem;
+      }
+    }
   </style>
 </head>
 
 <body>
   <!-- ENCABEZADO -->
   <div class="barra-superior">
-  <div class="contenedor-barra">
-    <p><span>Inter</span>empleo - Registro</p>
-    <a class="boton-enlace" href="asistencia_responsive.php">Volver a asistencias</a>
+    <div class="contenedor-barra">
+      <p><span>Inter</span>empleo - Registro</p>
+      <a class="boton-enlace" href="asistencia_responsive.php">Volver a asistencias</a>
+    </div>
   </div>
-</div>
 
   <!-- CONTENIDO -->
   <div class="contenido">
@@ -193,7 +198,7 @@ include("validar_sesion.php");
               <input type="text" id="dni" name="dni" required>
             </td>
           </tr>
-          
+
         </table>
       </div>
 
@@ -201,37 +206,48 @@ include("validar_sesion.php");
     </form>
 
     <?php
-if (isset($_POST['enviar'])) {
-    $nombre = strip_tags($_POST['nombre']);
-    $apellidos = strip_tags($_POST['apellidos']);
-    $dni = strip_tags($_POST['dni']);
+    if (isset($_POST['enviar'])) {
+      include("conexion_bd.php");
 
-    include("conexion_bd.php");
+      $nombre = mysqli_real_escape_string($conexion, strip_tags($_POST['nombre']));
+      $apellidos = mysqli_real_escape_string($conexion, strip_tags($_POST['apellidos']));
+      $dni = mysqli_real_escape_string($conexion, strip_tags($_POST['dni']));
 
-    // Limpiar entradas
-    $nombre = mysqli_real_escape_string($conexion, $nombre);
-    $apellidos = mysqli_real_escape_string($conexion, $apellidos);
-    $dni = mysqli_real_escape_string($conexion, $dni);
+      // Verificar si el trabajador ya existe
+      $consulta_existencia = "SELECT * FROM trabajadores WHERE dni = '$dni'";
+      $resultado = mysqli_query($conexion, $consulta_existencia);
 
-    // Verificar si ya existe el trabajador
-    $consulta_existencia = "SELECT * FROM trabajadores WHERE dni = '$dni'";
-    $resultado = mysqli_query($conexion, $consulta_existencia);
+      if (mysqli_num_rows($resultado) > 0) {
+        $fila = mysqli_fetch_assoc($resultado);
 
-    if (mysqli_num_rows($resultado) > 0) {
-        echo "<p style='margin-top: 1rem; color: red; font-weight: bold;'>Este usuario ya ha sido registrado</p>";
-    } else {
-        $consulta = "INSERT INTO trabajadores VALUES (NULL, '$nombre', '$apellidos', '$dni')";
-        if (mysqli_query($conexion, $consulta)) {
-            echo "<p style='margin-top: 1rem; color: green; font-weight: bold;'>Usuario registrado correctamente</p>";
+        if ($fila['activo'] == 0) {
+          // Si existe pero está inactivo → volver a activarlo
+          $activar = "UPDATE trabajadores SET activo = 1, nombre = '$nombre', apellidos = '$apellidos' WHERE dni = '$dni'";
+          if (mysqli_query($conexion, $activar)) {
+            echo "<p style='margin-top: 1rem; color: green; font-weight: bold;'>✅ Trabajador reactivado correctamente.</p>";
+          } else {
+            echo "<p style='margin-top: 1rem; color: red; font-weight: bold;'>❌ Error al reactivar al trabajador.</p>";
+          }
         } else {
-            echo "<p style='margin-top: 1rem; color: red; font-weight: bold;'>Error al registrar usuario</p>";
+          // Si ya está activo
+          echo "<p style='margin-top: 1rem; color: orange; font-weight: bold;'>⚠️ Este trabajador ya está dado de alta.</p>";
         }
-    }
+      } else {
+        // Si no existe → insertarlo como nuevo
+        $consulta = "INSERT INTO trabajadores (nombre, apellidos, dni, activo) VALUES ('$nombre', '$apellidos', '$dni', 1)";
+        if (mysqli_query($conexion, $consulta)) {
+          echo "<p style='margin-top: 1rem; color: green; font-weight: bold;'>✅ Trabajador registrado correctamente.</p>";
+        } else {
+          echo "<p style='margin-top: 1rem; color: red; font-weight: bold;'>❌ Error al registrar al trabajador.</p>";
+        }
+      }
 
-    mysqli_close($conexion);
-}
-?>
+      mysqli_close($conexion);
+    }
+    ?>
+
 
   </div>
 </body>
+
 </html>
