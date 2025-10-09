@@ -220,7 +220,7 @@ if (isset($_POST['enviar'])) {
     if (mysqli_num_rows($resultado) > 0) {
         echo "<p style='margin-top: 1rem; color: red; font-weight: bold;'>Este usuario ya ha sido registrado</p>";
     } else {
-        $consulta = "INSERT INTO trabajadores VALUES (NULL, '$nombre', '$apellidos', '$dni')";
+        $consulta = "INSERT INTO trabajadores VALUES (NULL, '$nombre', '$apellidos', '$dni',1)";
         if (mysqli_query($conexion, $consulta)) {
             echo "<p style='margin-top: 1rem; color: green; font-weight: bold;'>Usuario registrado correctamente</p>";
         } else {

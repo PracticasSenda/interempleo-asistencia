@@ -195,29 +195,111 @@ include("validar_sesion.php");
     </form>
 
     <?php
-    if (isset($_POST['enviar'])) {
-       $nombre = strip_tags($_POST['nombre']);
-       $dni = strip_tags($_POST['dni']);
+if (isset($_POST['enviar'])) {
+    $nombre = strip_tags($_POST['nombre']);
+    $dni = strip_tags($_POST['dni']);
 
     include("conexion_bd.php");
 
-      $nombre = mysqli_real_escape_string($conexion, $nombre);
-      $dni = mysqli_real_escape_string($conexion, $dni);
+    $nombre = mysqli_real_escape_string($conexion, $nombre);
+    $dni = mysqli_real_escape_string($conexion, $dni);
 
-      $consulta = "DELETE FROM trabajadores WHERE nombre = '$nombre' AND dni = '$dni'";
-      mysqli_query($conexion, $consulta);
+    // Buscar el trabajador por nombre y dni
+    $query = "SELECT id, activo FROM trabajadores WHERE nombre = '$nombre' AND dni = '$dni' LIMIT 1";
+    $result = mysqli_query($conexion, $query);
 
-    // Verificar si se eliminó alguna fila
-      if (mysqli_affected_rows($conexion) > 0) {
-         echo "<p style='margin-top: 1rem; color: green; font-weight: bold;'>✅ Usuario eliminado correctamente.</p>";
-     } else {
-          echo "<p style='margin-top: 1rem; color: red; font-weight: bold;'>❌ No se encontró ningún usuario con ese nombre y DNI.</p>";
-      }
+    if ($result && mysqli_num_rows($result) > 0) {
+        $trabajador = mysqli_fetch_assoc($result);
 
-      mysqli_close($conexion);
-  }
+        if ($trabajador['activo'] == 0) {
+            echo "<p style='margin-top: 1rem; color: orange; font-weight: bold;'>⚠️ Este trabajador ya está dado de baja.</p>";
+        } else {
+            // Dar de baja (cambio lógico)
+            $update = "UPDATE trabajadores SET activo = 0 WHERE id = {$trabajador['id']}";
+            mysqli_query($conexion, $update);
 
-    ?>
+            if (mysqli_affected_rows($conexion) > 0) {
+                echo "<p style='margin-top: 1rem; color: green; font-weight: bold;'>✅ Trabajador dado de baja correctamente.</p>";
+            } else {
+                echo "<p style='margin-top: 1rem; color: red; font-weight: bold;'>❌ No se pudo actualizar el estado del trabajador.</p>";
+            }
+        }
+    } else {
+        echo "<p style='margin-top: 1rem; color: red; font-weight: bold;'>❌ No se encontró ningún trabajador con ese nombre y DNI.</p>";
+    }
+
+    mysqli_close($conexion);
+}
+?>
+
   </div>
+
+  <script>
+document.addEventListener("DOMContentLoaded", function () {
+  const nombreInput = document.getElementById("nombre");
+  const dniInput = document.getElementById("dni");
+  let sugerenciasBox;
+
+  // Crear caja de sugerencias
+  sugerenciasBox = document.createElement("div");
+  sugerenciasBox.style.position = "absolute";
+  sugerenciasBox.style.backgroundColor = "white";
+  sugerenciasBox.style.border = "1px solid #ccc";
+  sugerenciasBox.style.zIndex = "9999";
+  sugerenciasBox.style.width = nombreInput.offsetWidth + "px";
+  sugerenciasBox.style.maxHeight = "200px";
+  sugerenciasBox.style.overflowY = "auto";
+  sugerenciasBox.style.display = "none";
+  document.body.appendChild(sugerenciasBox);
+
+  nombreInput.addEventListener("input", function () {
+    const query = this.value;
+    if (query.length < 2) {
+      sugerenciasBox.style.display = "none";
+      return;
+    }
+
+    fetch(`buscar_trabajadores.php?q=${encodeURIComponent(query)}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.length === 0) {
+          sugerenciasBox.style.display = "none";
+          return;
+        }
+
+        // Posicionar la caja debajo del input
+        const rect = nombreInput.getBoundingClientRect();
+        sugerenciasBox.style.top = window.scrollY + rect.bottom + "px";
+        sugerenciasBox.style.left = window.scrollX + rect.left + "px";
+        sugerenciasBox.innerHTML = "";
+
+        data.forEach(item => {
+          const opcion = document.createElement("div");
+          opcion.textContent = item.label;
+          opcion.style.padding = "8px";
+          opcion.style.cursor = "pointer";
+
+          opcion.addEventListener("click", () => {
+            nombreInput.value = item.nombre;
+            dniInput.value = item.dni;
+            sugerenciasBox.style.display = "none";
+          });
+
+          sugerenciasBox.appendChild(opcion);
+        });
+
+        sugerenciasBox.style.display = "block";
+      });
+  });
+
+  // Ocultar sugerencias si se hace clic fuera
+  document.addEventListener("click", function (e) {
+    if (!sugerenciasBox.contains(e.target) && e.target !== nombreInput) {
+      sugerenciasBox.style.display = "none";
+    }
+  });
+});
+</script>
+
 </body>
 </html>

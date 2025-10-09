@@ -72,58 +72,78 @@ class PDF extends FPDF
         $this->Cell(0, 10, utf8_decode('Página ') . $this->PageNo(), 0, 0, 'C');
     }
 
-    function TablaAsistencias($header, $data)
-    {
-        $this->SetFillColor(52, 73, 94);
-        $this->SetTextColor(255);
-        $this->SetFont('Arial', 'B', 9);
+   function TablaAsistencias($header, $data)
+{
+    $this->SetFillColor(52, 73, 94);
+    $this->SetTextColor(255);
+    $this->SetFont('Arial', 'B', 9);
 
-        $w = [20, 20, 25, 18, 30, 22, 20, 15, 55];
+    $w = [20, 20, 25, 18, 30, 22, 20, 15, 55];
 
-        $available = $this->w - $this->lMargin - $this->rMargin;
-        $total = array_sum($w);
-        if ($total > 0 && $total != $available) {
-            $scale = $available / $total;
-            foreach ($w as $i => $wi) {
-                $w[$i] = $wi * $scale;
-            }
+    $available = $this->w - $this->lMargin - $this->rMargin;
+    $total = array_sum($w);
+    if ($total > 0 && $total != $available) {
+        $scale = $available / $total;
+        foreach ($w as $i => $wi) {
+            $w[$i] = $wi * $scale;
+        }
+    }
+
+    for ($i = 0; $i < count($header); $i++) {
+        $this->Cell($w[$i], 7, utf8_decode($header[$i]), 1, 0, 'C', true);
+    }
+    $this->Ln();
+
+    $this->SetFont('Arial', '', 8);
+    $this->SetFillColor(245, 245, 245);
+    $this->SetTextColor(0);
+    $fill = false;
+
+    foreach ($data as $row) {
+        $x = $this->GetX();
+        $y = $this->GetY();
+
+        $fields = [
+            utf8_decode($row['empresa']),
+            utf8_decode($row['fecha']),
+            utf8_decode($row['producto']),
+            utf8_decode($row['asistencia']),
+            utf8_decode($row['nombre_trabajador']),
+            utf8_decode($row['dni']),
+            utf8_decode($row['bandeja']),
+            utf8_decode($row['horas']),
+            utf8_decode($row['observaciones']),
+        ];
+
+        // 🔸 1. Calculamos la altura necesaria para CADA CELDA
+        $nbLines = [];
+        foreach ($fields as $i => $text) {
+            $nbLines[] = $this->NbLines($w[$i], $text);
         }
 
-        for ($i = 0; $i < count($header); $i++) {
-            $this->Cell($w[$i], 7, utf8_decode($header[$i]), 1, 0, 'C', true);
-        }
-        $this->Ln();
+        // 🔸 2. Calculamos la altura máxima de la fila
+        $maxNbLines = max($nbLines);
+        $h = 5 * $maxNbLines;
 
-        $this->SetFont('Arial', '', 8);
-        $this->SetFillColor(245, 245, 245);
-        $this->SetTextColor(0);
-        $fill = false;
-
-        foreach ($data as $row) {
+        // 🔸 3. Dibujamos cada celda (usando MultiCell)
+        for ($i = 0; $i < count($fields); $i++) {
             $x = $this->GetX();
             $y = $this->GetY();
+            $this->MultiCell($w[$i], 5, $fields[$i], 1, 'C', $fill);
 
-            $obs = utf8_decode($row['observaciones']);
-            $nb  = $this->NbLines($w[8], $obs);
-            $h   = 6 * max(1, $nb);
-
-            $this->Cell($w[0], $h, utf8_decode($row['empresa']),            1, 0, 'C', $fill);
-            $this->Cell($w[1], $h, utf8_decode($row['fecha']),              1, 0, 'C', $fill);
-            $this->Cell($w[2], $h, utf8_decode($row['producto']),           1, 0, 'C', $fill);
-            $this->Cell($w[3], $h, utf8_decode($row['asistencia']),         1, 0, 'C', $fill);
-            $this->Cell($w[4], $h, utf8_decode($row['nombre_trabajador']),  1, 0, 'C', $fill);
-            $this->Cell($w[5], $h, utf8_decode($row['dni']),                1, 0, 'C', $fill);
-            $this->Cell($w[6], $h, utf8_decode($row['bandeja']),            1, 0, 'C', $fill);
-            $this->Cell($w[7], $h, utf8_decode($row['horas']),              1, 0, 'C', $fill);
-
-            $this->MultiCell($w[8], 6, $obs, 1, 'L', $fill);
-            $this->SetXY($x, $y + $h);
-            $fill = !$fill;
+            // 🔸 4. Mover cursor a la derecha, al inicio de la siguiente celda
+            $this->SetXY($x + $w[$i], $y);
         }
 
-        $this->Cell(array_sum($w), 0, '', 'T');
-        $this->Ln(2);
+        // 🔸 5. Bajar al inicio de la siguiente fila
+        $this->Ln($h);
+        $fill = !$fill;
     }
+
+    $this->Cell(array_sum($w), 0, '', 'T');
+    $this->Ln(2);
+}
+
 
     function NbLines($w, $txt)
     {
