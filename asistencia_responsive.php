@@ -310,13 +310,14 @@ include("validar_sesion.php");
 
   <div class="menu-dropdown" id="menuDropdown">
     <a href="alta-baja-trabajadores.php">Gestión de trabajadores</a>
-    <a href="exportar_excel_pdf.php">Exportar excel/PDF</a>
-    <a href="cerrar_sesion.php">Cerrar sesión</a>
-    <?php
+     <?php
     if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'administrador') {
         echo '<a href="alta-baja-encargados.php">Gestión de encargados</a>';
     }
     ?>
+    <a href="exportar_excel_pdf.php">Exportar excel/PDF</a>
+    <a href="cerrar_sesion.php">Cerrar sesión</a>
+   
   </div>
 </div>
 
