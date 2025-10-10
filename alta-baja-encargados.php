@@ -41,9 +41,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           UPDATE usuarios 
           SET activo = 1, `contraseña` = ?
           WHERE id = ?
-
         ");
-      $stmtUpdate->bind_param("sssi", $password, $idExistente);
+      $stmtUpdate->bind_param("si", $password, $idExistente);
       if ($stmtUpdate->execute()) {
         if ($activo == 0) {
           $mensaje = "<p style='color:green;font-weight:bold;'>🔄 Encargado reactivado correctamente</p>";
@@ -127,7 +126,6 @@ $sql .= " ORDER BY activo DESC, apellidos, nombre ASC";
 
 $result = $conexion->query($sql);
 $encargados = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
-
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -135,7 +133,9 @@ $encargados = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Panel de gestión de encargados de Interempleo. Alta, baja y filtrado de encargados activos e inactivos.">
   <title>Gestión Encargados | Interempleo</title>
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
   <style>
     :root {
       --color-principal: #FF671D;
@@ -145,6 +145,7 @@ $encargados = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
       --color-input-bg: #F9F9F9;
     }
 
+    /* ----- ESTRUCTURA GENERAL ----- */
     body {
       font-family: Arial, sans-serif;
       margin: 0;
@@ -153,8 +154,9 @@ $encargados = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
       color: var(--color-texto);
     }
 
+    /* ----- HEADER & NAV ----- */
     header {
-      background-color: var(--color-principal);
+      background: var(--color-principal);
       color: white;
       padding: 1.2rem 2rem;
     }
@@ -195,6 +197,7 @@ $encargados = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
       color: white;
     }
 
+    /* ----- CONTENIDO PRINCIPAL ----- */
     main {
       max-width: 800px;
       margin: 2rem auto;
@@ -206,6 +209,7 @@ $encargados = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
       color: var(--color-principal);
     }
 
+    /* ----- TARJETAS Y FORMULARIOS ----- */
     .tarjeta-asistencia {
       background: var(--color-principal);
       color: white;
@@ -220,6 +224,30 @@ $encargados = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
       margin-bottom: 0.3rem;
     }
 
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 0.6rem;
+      border: none;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+
+    /* ----- BOTONES ----- */
+    button,
+    .btn-limpiar {
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 38px;
+    }
 
     button {
       width: 100%;
@@ -227,15 +255,103 @@ $encargados = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
       background: var(--color-principal);
       color: white;
       border: none;
-      border-radius: 4px;
       font-size: 1rem;
-      cursor: pointer;
     }
 
-    button:hover {
+    button:hover,
+    .buscador-flex button:hover {
       background: #e65c17;
     }
 
+    /* Botón Reiniciar */
+    .btn-limpiar {
+      background: none;
+      border: 1px solid var(--color-principal);
+      color: var(--color-principal);
+      padding: 0.35rem 0.7rem;
+      margin-left: 6px;
+      width: auto;
+    }
+
+    .btn-limpiar:hover {
+      background: var(--color-principal);
+      color: white;
+    }
+
+    /* ----- TABLA ----- */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid var(--color-borde);
+      background: var(--color-fondo);
+      box-shadow: 0 2px 8px rgba(255, 103, 29, 0.1);
+    }
+
+    th,
+    td {
+      text-align: center;
+      padding: 8px;
+      border-bottom: 1px solid var(--color-borde);
+    }
+
+    th {
+      background: var(--color-principal);
+      color: white;
+      font-weight: bold;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    tr.inactivo td {
+      opacity: 0.7;
+    }
+
+    tr:hover td {
+      background-color: #fff4ee;
+      transition: background-color 0.2s ease-in-out;
+    }
+
+    /* ----- FORMULARIO DE FILTROS ----- */
+    form[method="get"] {
+      background: #fff4ee;
+      border: 1px solid #ffe0cc;
+      border-radius: 8px;
+      padding: 0.8rem;
+      box-shadow: 0 2px 6px rgba(255, 103, 29, 0.1);
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+
+    .buscador-flex {
+      display: inline-flex;
+      align-items: stretch;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 0.5rem;
+      vertical-align: middle;
+    }
+
+    .buscador-flex input {
+      padding: 0.45rem 0.6rem;
+      border: 1px solid var(--color-borde);
+      border-radius: 4px 0 0 4px;
+      width: 180px;
+      height: 38px;
+    }
+
+    .buscador-flex button {
+      background: var(--color-principal);
+      color: white;
+      border: 1px solid var(--color-borde);
+      border-left: none;
+      border-radius: 0 4px 4px 0;
+      padding: 0.45rem 0.9rem;
+      font-weight: bold;
+      height: 38px;
+    }
+
+    /* ----- FOOTER ----- */
     footer {
       margin-top: 2rem;
       text-align: center;
@@ -245,18 +361,32 @@ $encargados = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
       border-top: 1px solid var(--color-borde);
     }
 
-    input,
-    select,
-    textarea {
-      width: 100%;
-      max-width: 100%;
-      padding: 0.6rem;
-      border: none;
-      border-radius: 4px;
-      margin-bottom: 1rem;
-      font-size: 1rem;
-      box-sizing: border-box;
-      /* Asegura que padding no aumente el tamaño */
+    /* ----- RESPONSIVE ----- */
+    @media (max-width: 768px) {
+      .tabla-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      table {
+        min-width: 600px;
+      }
+
+      .buscador-flex {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
     }
   </style>
 </head>
@@ -332,48 +462,69 @@ $encargados = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
 
     <?php elseif ($accion === 'listar'): ?>
       <h2>Lista de encargados</h2>
-      <form method="get" style="text-align:center; margin-bottom:1rem;">
+      <form id="form-filtros" method="get" style="text-align:center; margin-bottom:1rem;">
         <input type="hidden" name="accion" value="listar">
 
-        <!-- Filtro por DNI -->
-        <input type="text" name="dni" placeholder="Buscar por DNI..."
-          value="<?= htmlspecialchars($filtro_dni) ?>"
-          style="padding:0.4rem; border:1px solid #ccc; border-radius:4px; width:180px;">
-
-        <!-- Filtro por estado -->
+        <div class="buscador-flex">
+          <label for="buscar-dni" class="sr-only">Buscar encargado por DNI o nombre</label>
+          <input id="buscar-dni" type="text" name="dni" placeholder="Introduce DNI/NIE"
+            value="<?= htmlspecialchars($filtro_dni) ?>">
+          <button type="submit">Buscar</button>
+        </div>
         <select name="estado" style="padding:0.4rem; border:1px solid #ccc; border-radius:4px;">
-          <option value="activos" <?= $filtro_estado === 'activos' ? 'selected' : '' ?>>🟢 Activos</option>
-          <option value="inactivos" <?= $filtro_estado === 'inactivos' ? 'selected' : '' ?>>🔴 Inactivos</option>
+          <option value="activos" <?= $filtro_estado === 'activos' ? 'selected' : '' ?>>🟩 Activos</option>
+          <option value="inactivos" <?= $filtro_estado === 'inactivos' ? 'selected' : '' ?>>🟥 Inactivos</option>
           <option value="todos" <?= $filtro_estado === 'todos' ? 'selected' : '' ?>>👁️ Todos</option>
         </select>
 
-        <button type="submit" style="background:#FF671D; color:white; border:none; border-radius:4px; padding:0.5rem 1rem; cursor:pointer;">
-          
-        <a href="?accion=listar" style="margin-left:8px; color:#FF671D; text-decoration:none;">🧹 Limpiar</a>
-🔍 Filtrar
-          
+        <button type="button" onclick="window.location='?accion=listar'" class="btn-limpiar">
+          🔄 Reiniciar
         </button>
+
       </form>
+
+      <script>
+        // ✅ Cuando cambias el estado (Activos/Inactivos/Todos), se actualiza automáticamente
+        const selectEstado = document.querySelector('select[name="estado"]');
+        const formFiltros = document.getElementById('form-filtros');
+
+        if (selectEstado && formFiltros) {
+          selectEstado.addEventListener('change', () => {
+            formFiltros.submit();
+          });
+        }
+      </script>
+
+
 
       <?php if (empty($encargados)): ?>
         <p>No hay encargados registrados.</p>
       <?php else: ?>
-        <table border="1" cellpadding="8" style="width:100%; border-collapse:collapse;">
-          <tr style="background:#eee;">
-            <th>Nombre</th>
-            <th>Apellidos</th>
-            <th>DNI/NIE</th>
-            <th>Estado</th>
-          </tr>
-          <?php foreach ($encargados as $e): ?>
-            <tr style="background: <?= $e['activo'] ? '#fff' : '#f9d6c1' ?>;">
-              <td><?= htmlspecialchars($e['nombre']) ?></td>
-              <td><?= htmlspecialchars($e['apellidos']) ?></td>
-              <td><?= htmlspecialchars($e['dni']) ?></td>
-              <td><?= $e['activo'] ? '🟢 Activo' : '🔴 Inactivo' ?></td>
-            </tr>
-          <?php endforeach; ?>
-        </table>
+        <div class="tabla-scroll">
+          <table class="tabla-encargados">
+            <thead>
+              <tr>
+                <th scope="col">Nombre</th>
+                <th scope="col">Apellidos</th>
+                <th scope="col">DNI/NIE</th>
+                <th scope="col">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <?php foreach ($encargados as $e): ?>
+                <tr class="<?= $e['activo'] ? '' : 'inactivo' ?>">
+
+                  <td><?= htmlspecialchars($e['nombre']) ?></td>
+                  <td><?= htmlspecialchars($e['apellidos']) ?></td>
+                  <td><?= htmlspecialchars($e['dni']) ?></td>
+                  <td aria-label="<?= $e['activo'] ? 'Encargado activo' : 'Encargado inactivo' ?>">
+                    <?= $e['activo'] ? '🟩 Activo' : '🟥 Inactivo' ?>
+                  </td>
+                </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
       <?php endif; ?>
     <?php endif; ?>
 
@@ -381,8 +532,9 @@ $encargados = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
   </main>
 
   <footer>
-    &copy; <?= date("Y") ?> Interempleo. Todos los derechos reservados.
+    <p>&copy; <?= date("Y") ?> <strong>Interempleo</strong>. Todos los derechos reservados.</p>
   </footer>
+
 </body>
 
 </html>
