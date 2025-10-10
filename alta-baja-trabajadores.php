@@ -436,7 +436,7 @@ select {
       <label for="filtro-dni">Filtrar por DNI:</label>
       <input type="text" id="filtro-dni" placeholder="Introduce DNI..." oninput="filtrarTabla()">
       
-      <label for="filtro-activo">Activo (0 o 1):</label>
+      <label for="filtro-activo">Activo:</label>
       <select id="filtro-activo">
    <option value="">Todos</option>
    <option value="1">Activo</option>
