@@ -234,6 +234,71 @@
 .formulario button:hover {
   background-color: #e65c17;
 }
+.btn-volver {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 0.4rem 1rem;
+  border: 2px solid white;
+  color: white;
+  background-color: transparent;
+  text-decoration: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.btn-volver:hover {
+  background-color: white;
+  color: var(--color-principal); /* Cambia el texto al color principal al hacer hover */
+}
+.formulario input[type="text"],
+.formulario input[type="number"] {
+  color: black;
+}
+#baja_nombre {
+  color: #000; /* o el color que quieras */
+  background-color: #F9F9F9; /* asegúrate que contraste */
+}
+#baja_nombre,
+#baja_dni {
+  color: black !important;
+  background-color: #F9F9F9 !important;
+  -webkit-text-fill-color: black !important; /* Safari/Chrome autocomplete fix */
+}
+
+#baja_nombre::placeholder,
+#baja_dni::placeholder {
+  color: #888 !important;
+}
+
+input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0px 1000px #F9F9F9 inset !important;
+  -webkit-text-fill-color: black !important;
+}
+.formulario {
+  position: relative;
+}
+#baja_nombre {
+  position: relative; /* Por si acaso */
+}
+select {
+  padding: 0.5rem;
+  border: 1px solid var(--color-borde);
+  border-radius: 4px;
+  background-color: var(--color-input-bg);
+  width: 200px;
+  max-width: 100%;
+  box-sizing: border-box;
+  font-size: 1rem;
+  color: black;
+}
+
+
+
+
+
+
+
 
 
 
@@ -241,9 +306,10 @@
 </head>
 
 <body>
-  <div class="barra-superior">
-    <p><span>Inter</span>empleo - Gestión de trabajadores</p>
-  </div>
+  <div class="barra-superior" style="display: flex; justify-content: space-between; align-items: center;">
+  <p style="margin: 0;"><span>Inter</span>empleo - Gestión de trabajadores</p>
+  <a href="asistencia_responsive.php" class="btn-volver">Volver a asistencias</a>
+</div>
 
   <div class="contenido">
     <div class="botones">
@@ -371,7 +437,12 @@
       <input type="text" id="filtro-dni" placeholder="Introduce DNI..." oninput="filtrarTabla()">
       
       <label for="filtro-activo">Activo (0 o 1):</label>
-      <input type="number" id="filtro-activo" min="0" max="1" oninput="filtrarTabla()">
+      <select id="filtro-activo">
+   <option value="">Todos</option>
+   <option value="1">Activo</option>
+   <option value="0">Inactivo</option>
+</select>
+
     </div>
 
     <div class="tarjeta-asistencia" style="overflow-x:auto;">
@@ -437,7 +508,7 @@
     }
 
     filtroDNI.addEventListener("input", filtrarTabla);
-    filtroActivo.addEventListener("input", filtrarTabla);
+    filtroActivo.addEventListener("change", filtrarTabla);
   });
   
 
@@ -464,6 +535,87 @@ function mostrarSeccion(id) {
     }
   });
 </script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const inputNombre = document.getElementById("baja_nombre");
+  const inputDNI = document.getElementById("baja_dni");
+
+  // Crear contenedor de sugerencias
+  const sugerencias = document.createElement("div");
+  sugerencias.id = "sugerencias-autocompletado";
+  sugerencias.style.position = "absolute";
+  sugerencias.style.backgroundColor = "rgba(255, 255, 255, 0.95)";
+  sugerencias.style.border = "none";
+  sugerencias.style.zIndex = "1000";
+  sugerencias.style.maxHeight = "150px";
+  sugerencias.style.overflowY = "auto";
+  sugerencias.style.display = "none";
+
+  inputNombre.parentNode.appendChild(sugerencias);
+
+  inputNombre.addEventListener("input", function() {
+    const valor = this.value;
+
+    if (valor.length < 2) {
+      sugerencias.style.display = "none";
+      return;
+    }
+
+    fetch(`buscar_trabajador_baja.php?query=${encodeURIComponent(valor)}`)
+      .then(response => response.json())
+      .then(data => {
+        sugerencias.innerHTML = "";
+        if (data.length > 0) {
+          data.forEach(trabajador => {
+            const opcion = document.createElement("div");
+            opcion.textContent = `${trabajador.dni} - ${trabajador.nombre}`;
+            opcion.style.padding = "8px";
+            opcion.style.cursor = "pointer";
+            opcion.style.color = "black";
+
+            opcion.addEventListener("click", function() {
+              inputNombre.value = '';
+              inputNombre.offsetHeight; // Forzar reflow
+              inputNombre.value = trabajador.nombre;
+              inputDNI.value = trabajador.dni;
+
+              // Espera un poco antes de ocultar sugerencias
+              setTimeout(() => {
+                sugerencias.style.display = "none";
+              }, 100);
+            });
+
+            sugerencias.appendChild(opcion);
+          });
+
+          const rect = inputNombre.getBoundingClientRect();
+          const parentRect = inputNombre.parentNode.getBoundingClientRect();
+
+          sugerencias.style.width = rect.width + "px";
+          sugerencias.style.left = (rect.left - parentRect.left) + "px";
+          sugerencias.style.top = (rect.top - parentRect.top + inputNombre.offsetHeight) + "px";
+
+          sugerencias.style.display = "block";
+        } else {
+          sugerencias.style.display = "none";
+        }
+      })
+      .catch(error => {
+        console.error("Error en la solicitud AJAX:", error);
+        sugerencias.style.display = "none";
+      });
+  });
+
+  // Ocultar sugerencias si se hace clic fuera
+  document.addEventListener("click", function(e) {
+    if (!sugerencias.contains(e.target) && e.target !== inputNombre) {
+      sugerencias.style.display = "none";
+    }
+  });
+});
+</script>
+
 
 </body>
 </html>
