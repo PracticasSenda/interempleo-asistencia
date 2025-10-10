@@ -13,62 +13,63 @@ $mensaje = "";
 // ---- LÓGICA ----
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if ($accion === 'alta') {
-    // 🔧 Normalizamos los valores para evitar duplicados por mayúsculas o espacios
-    $nombre = ucwords(strtolower(trim($_POST['nombre'])));
-    $apellidos = ucwords(strtolower(trim($_POST['apellidos'])));
-    $dni = strtoupper(trim($_POST['dni']));
-    $password = $_POST['password'];
+  // 🔧 Normalizamos valores
+  $nombre = ucwords(strtolower(trim($_POST['nombre'])));
+  $apellidos = ucwords(strtolower(trim($_POST['apellidos'])));
+  $dni = strtoupper(trim($_POST['dni']));
+  $password = $_POST['password'];
 
-    // 🔍 Verificar si ya existe un encargado con mismo nombre, apellidos y dni
-    $stmtCheck = $conexion->prepare("
-        SELECT id, activo 
-        FROM usuarios 
-        WHERE rol = 'encargado' 
-          AND nombre = ? 
-          AND apellidos = ? 
-          AND dni = ?
-        LIMIT 1
-    ");
-    $stmtCheck->bind_param("sss", $nombre, $apellidos, $dni);
-    $stmtCheck->execute();
-    $stmtCheck->store_result();  // ✅ Carga los resultados en memoria y libera el cursor
-    $stmtCheck->bind_result($idExistente, $activo);
+  // 🔍 Verificar si ya existe un encargado con el mismo DNI
+  $stmtCheck = $conexion->prepare("
+      SELECT id, activo, nombre, apellidos
+      FROM usuarios 
+      WHERE rol = 'encargado' 
+        AND dni = ?
+      LIMIT 1
+  ");
+  $stmtCheck->bind_param("s", $dni);
+  $stmtCheck->execute();
+  $stmtCheck->store_result();
+  $stmtCheck->bind_result($idExistente, $activo, $nombreExistente, $apellidosExistente);
 
-    if ($stmtCheck->fetch()) {
-      // ✅ Ya existe → reactivar y actualizar contraseña
-      $stmtCheck->close();
+  if ($stmtCheck->fetch()) {
+    // ✅ Ya existe → reactivar si estaba inactivo, o bloquear si ya está activo
+    $stmtCheck->close();
+
+    if ($activo == 0) {
+      // Reactivar
       $stmtUpdate = $conexion->prepare("
           UPDATE usuarios 
           SET activo = 1, `contraseña` = ?
           WHERE id = ?
-        ");
+      ");
       $stmtUpdate->bind_param("si", $password, $idExistente);
       if ($stmtUpdate->execute()) {
-        if ($activo == 0) {
-          $mensaje = "<p style='color:green;font-weight:bold;'>🔄 Encargado reactivado correctamente</p>";
-        } else {
-          $mensaje = "<p style='color:orange;font-weight:bold;'>⚠️ El encargado ya estaba activo, se actualizó la contraseña</p>";
-        }
+        $mensaje = "<p style='color:green;font-weight:bold;'>🔄 Encargado con DNI $dni reactivado correctamente.</p>";
       } else {
-        $mensaje = "<p style='color:red;font-weight:bold;'>❌ Error al actualizar encargado</p>";
+        $mensaje = "<p style='color:red;font-weight:bold;'>❌ Error al reactivar encargado.</p>";
       }
       $stmtUpdate->close();
     } else {
-      // 🆕 No existe → crear nuevo registro
-      $stmtCheck->close();
-      $stmtInsert = $conexion->prepare("
-            INSERT INTO usuarios (nombre, apellidos, dni, rol, `contraseña`, activo)
-            VALUES (?, ?, ?, 'encargado', ?, 1)
-        ");
-      $stmtInsert->bind_param("ssss", $nombre, $apellidos, $dni, $password);
-      if ($stmtInsert->execute()) {
-        $mensaje = "<p style='color:green;font-weight:bold;'>✅ Encargado registrado correctamente</p>";
-      } else {
-        $mensaje = "<p style='color:red;font-weight:bold;'>❌ Error: " . htmlspecialchars($stmtInsert->error) . "</p>";
-      }
-      $stmtInsert->close();
+      // Ya activo → mostrar aviso y no duplicar
+      $mensaje = "<p style='color:red;font-weight:bold;'>⚠️ El DNI <strong>$dni</strong> ya está registrado como encargado activo (<em>$nombreExistente $apellidosExistente</em>).</p>";
     }
+  } else {
+    // 🆕 No existe → crear nuevo registro
+    $stmtCheck->close();
+    $stmtInsert = $conexion->prepare("
+        INSERT INTO usuarios (nombre, apellidos, dni, rol, `contraseña`, activo)
+        VALUES (?, ?, ?, 'encargado', ?, 1)
+    ");
+    $stmtInsert->bind_param("ssss", $nombre, $apellidos, $dni, $password);
+    if ($stmtInsert->execute()) {
+      $mensaje = "<p style='color:green;font-weight:bold;'>✅ Encargado registrado correctamente.</p>";
+    } else {
+      $mensaje = "<p style='color:red;font-weight:bold;'>❌ Error al registrar encargado: " . htmlspecialchars($stmtInsert->error) . "</p>";
+    }
+    $stmtInsert->close();
   }
+}
 
 
   if ($accion === 'baja' && isset($_POST['encargado_id'])) {
