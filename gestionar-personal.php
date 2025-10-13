@@ -1,389 +1,710 @@
 <?php
+// gestionar-personal.php
 include("validar_sesion.php");
-if ($_SESSION['rol'] !== 'administrador') {
+include("conexion_bd.php");
+
+if (!isset($_SESSION['rol']) || !in_array($_SESSION['rol'], ['administrador', 'encargado'])) {
     header("Location: login_responsive.php");
     exit();
 }
 
-include("conexion_bd.php");
+$rol = $_SESSION['rol'];
+$nombre = $_SESSION['nombre'] ?? '';
+$apellidos = $_SESSION['apellidos'] ?? '';
+$nombre_completo = trim("$nombre $apellidos");
 
-// ---- PARÁMETROS ----
-$tipo = $_GET['tipo'] ?? 'encargado';
-$accion = $_GET['accion'] ?? 'listar';
-$mensaje = "";
+// Parámetros UI
+$tipo   = $_GET['tipo']   ?? 'trabajadores';        // 'trabajadores' | 'encargados'
+$vista  = $_GET['vista']  ?? 'lista';               // 'lista' | 'alta'
+$estado = $_GET['estado'] ?? 'activo';              // valor por defecto ahora es 'activo'
+$q      = trim($_GET['q'] ?? '');                   // búsqueda servidor: nombre/apellidos/dni
 
-// Determinar tabla y estructura según el tipo
-if ($tipo === 'trabajador') {
-    $tabla = "trabajadores";
-    $tienePassword = false;
-} else {
-    $tabla = "usuarios";
-    $tienePassword = true;
-    $rol_bd = 'encargado';
+// Encargado no puede ver encargados
+if ($rol === 'encargado' && $tipo === 'encargados') {
+    header("Location: gestionar-personal.php?tipo=trabajadores&vista=lista");
+    exit();
 }
 
-// ---- LÓGICA ----
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if ($accion === 'alta') {
-        $nombre = ucwords(strtolower(trim($_POST['nombre'])));
-        $apellidos = ucwords(strtolower(trim($_POST['apellidos'])));
-        $dni = strtoupper(trim($_POST['dni']));
-        $password = $_POST['password'] ?? null;
+// Mensajería
+$code = $_GET['code'] ?? '';
+$ok   = ($_GET['ok'] ?? '') === '1';
+$MSG = [
+    'alta_ok_trab'   => 'Trabajador dado de alta correctamente.',
+    'alta_ok_enc'    => 'Encargado dado de alta correctamente.',
+    'react_ok_trab'  => 'Trabajador reactivado correctamente.',
+    'react_ok_enc'   => 'Encargado reactivado correctamente.',
+    'dup_activo'     => 'El DNI ya existe y está activo. No se creó un duplicado.',
+    'baja_ok_trab'   => 'Trabajador dado de baja.',
+    'baja_ok_enc'    => 'Encargado dado de baja.',
+    'err_campos'     => 'Todos los campos son obligatorios.',
+    'err_sql'        => 'Ocurrió un error al operar en la base de datos.',
+    'sin_permiso'    => 'No tienes permiso para esta acción.'
+];
 
-        // Verificar duplicado por DNI
-        if ($tipo === 'trabajador') {
-            $stmtCheck = $conexion->prepare("SELECT id, activo FROM trabajadores WHERE dni = ? LIMIT 1");
-            $stmtCheck->bind_param("s", $dni);
-        } else {
-            $stmtCheck = $conexion->prepare("SELECT id, activo FROM usuarios WHERE dni = ? AND rol = 'encargado' LIMIT 1");
-            $stmtCheck->bind_param("s", $dni);
-        }
+function h($s)
+{
+    return htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
+}
+function redirect_with($params)
+{
+    $base = 'gestionar-personal.php';
+    header("Location: $base?" . http_build_query($params));
+    exit();
+}
 
-        $stmtCheck->execute();
-        $stmtCheck->store_result();
+/* ============================
+   ACCIONES POST (BAJA / ALTA)
+   ============================ */
 
-        if ($stmtCheck->num_rows > 0) {
-            $stmtCheck->bind_result($idExistente, $activo);
-            $stmtCheck->fetch();
-            $stmtCheck->close();
-
-            if ($activo == 0) {
-                // Reactivar registro
-                if ($tipo === 'trabajador') {
-                    $stmt = $conexion->prepare("UPDATE trabajadores SET activo = 1, nombre = ?, apellidos = ? WHERE id = ?");
-                    $stmt->bind_param("ssi", $nombre, $apellidos, $idExistente);
-                } else {
-                    $stmt = $conexion->prepare("UPDATE usuarios SET activo = 1, `contraseña` = ? WHERE id = ?");
-                    $stmt->bind_param("si", $password, $idExistente);
-                }
-                if ($stmt->execute()) {
-                    $mensaje = "<p style='color:green;font-weight:bold;'>🔄 $tipo reactivado correctamente.</p>";
-                } else {
-                    $mensaje = "<p style='color:red;font-weight:bold;'>❌ Error al reactivar $tipo.</p>";
-                }
-                $stmt->close();
-            } else {
-                $mensaje = "<p style='color:orange;font-weight:bold;'>⚠️ El $tipo con DNI <strong>$dni</strong> ya está activo.</p>";
-            }
-        } else {
-            $stmtCheck->close();
-            // Insertar nuevo
-            if ($tipo === 'trabajador') {
-                $stmtInsert = $conexion->prepare("INSERT INTO trabajadores (nombre, apellidos, dni, activo) VALUES (?, ?, ?, 1)");
-                $stmtInsert->bind_param("sss", $nombre, $apellidos, $dni);
-            } else {
-                $stmtInsert = $conexion->prepare("INSERT INTO usuarios (nombre, apellidos, dni, rol, `contraseña`, activo) VALUES (?, ?, ?, 'encargado', ?, 1)");
-                $stmtInsert->bind_param("ssss", $nombre, $apellidos, $dni, $password);
-            }
-            if ($stmtInsert->execute()) {
-                $mensaje = "<p style='color:green;font-weight:bold;'>✅ $tipo registrado correctamente.</p>";
-            } else {
-                $mensaje = "<p style='color:red;font-weight:bold;'>❌ Error al registrar $tipo.</p>";
-            }
-            $stmtInsert->close();
-        }
-    }
-
-    // ---- BAJA ----
-    if ($accion === 'baja' && isset($_POST['usuario_id'])) {
-        $id = intval($_POST['usuario_id']);
-        $dniInput = trim($_POST['dni']);
-
-        if ($tipo === 'trabajador') {
-            $stmt = $conexion->prepare("SELECT nombre, apellidos, dni FROM trabajadores WHERE id = ?");
+// Dar de baja (POST)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['accion'] === 'baja') {
+    $id = intval($_POST['id'] ?? 0);
+    if ($id > 0) {
+        if ($tipo === 'trabajadores') {
+            $stmt = $conexion->prepare("UPDATE trabajadores SET activo=0 WHERE id=?");
             $stmt->bind_param("i", $id);
-        } else {
-            $stmt = $conexion->prepare("SELECT nombre, apellidos, dni FROM usuarios WHERE id = ? AND rol = 'encargado'");
-            $stmt->bind_param("i", $id);
-        }
-
-        $stmt->execute();
-        $stmt->bind_result($nombre, $apellidos, $dniReal);
-        if ($stmt->fetch() && strcasecmp($dniInput, $dniReal) === 0) {
+            $ok_exec = $stmt->execute();
             $stmt->close();
-            $update = $conexion->prepare("UPDATE $tabla SET activo = 0 WHERE id = ?");
-            $update->bind_param("i", $id);
-            $update->execute();
-            $mensaje = "<p style='color:orange;font-weight:bold;'>✅ $tipo <strong>$apellidos $nombre</strong> dado de baja correctamente.</p>";
-            $update->close();
+            redirect_with(['tipo' => $tipo, 'vista' => 'lista', 'estado' => $estado, 'q' => $q, 'code' => $ok_exec ? 'baja_ok_trab' : 'err_sql', 'ok' => $ok_exec ? '1' : '0']);
+        } elseif ($tipo === 'encargados' && $rol === 'administrador') {
+            $stmt = $conexion->prepare("UPDATE usuarios SET activo=0 WHERE id=? AND rol='encargado'");
+            $stmt->bind_param("i", $id);
+            $ok_exec = $stmt->execute();
+            $stmt->close();
+            redirect_with(['tipo' => $tipo, 'vista' => 'lista', 'estado' => $estado, 'q' => $q, 'code' => $ok_exec ? 'baja_ok_enc' : 'err_sql', 'ok' => $ok_exec ? '1' : '0']);
         } else {
-            $mensaje = "<p style='color:red;font-weight:bold;'>❌ DNI incorrecto o $tipo no encontrado.</p>";
+            redirect_with(['tipo' => 'trabajadores', 'vista' => 'lista', 'code' => 'sin_permiso', 'ok' => '0']);
         }
     }
 }
 
-// ---- LISTADO ----
-$filtro_dni = isset($_GET['dni']) ? trim($_GET['dni']) : '';
-$filtro_estado = $_GET['estado'] ?? 'activos';
+// Dar de alta (POST) + reactivar si corresponde
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['accion'] === 'alta') {
+    $n = trim($_POST['nombre'] ?? '');
+    $a = trim($_POST['apellidos'] ?? '');
+    $d = trim($_POST['dni'] ?? '');
+    $c = ($tipo === 'encargados') ? trim($_POST['contraseña'] ?? '') : '';
 
-$sql = "SELECT id, nombre, apellidos, dni, activo FROM $tabla";
-if ($tipo === 'encargado') $sql .= " WHERE rol = 'encargado'";
+    if ($n === '' || $a === '' || $d === '' || ($tipo === 'encargados' && $c === '')) {
+        redirect_with(['tipo' => $tipo, 'vista' => 'alta', 'estado' => $estado, 'q' => $q, 'code' => 'err_campos', 'ok' => '0']);
+    }
 
-if ($filtro_estado === 'activos') $sql .= " AND activo = 1";
-elseif ($filtro_estado === 'inactivos') $sql .= " AND activo = 0";
+    if ($tipo === 'trabajadores') {
+        // Buscar por DNI
+        $stmt = $conexion->prepare("SELECT id, activo FROM trabajadores WHERE dni=? LIMIT 1");
+        $stmt->bind_param("s", $d);
+        $stmt->execute();
+        $stmt->bind_result($id_found, $act_found);
+        $exists = $stmt->fetch();
+        $stmt->close();
 
-if ($filtro_dni !== '') {
-    $dni_like = $conexion->real_escape_string($filtro_dni);
-    $sql .= " AND dni LIKE '%$dni_like%'";
+        if ($exists) {
+            if (intval($act_found) === 1) {
+                redirect_with(['tipo' => $tipo, 'vista' => 'alta', 'estado' => $estado, 'q' => $q, 'code' => 'dup_activo', 'ok' => '0']);
+            } else {
+                // Reactivar + actualizar nombre/apellidos
+                $stmt = $conexion->prepare("UPDATE trabajadores SET nombre=?, apellidos=?, activo=1 WHERE id=?");
+                $stmt->bind_param("ssi", $n, $a, $id_found);
+                $ok_exec = $stmt->execute();
+                $stmt->close();
+                redirect_with(['tipo' => $tipo, 'vista' => 'lista', 'estado' => $estado, 'q' => $q, 'code' => $ok_exec ? 'react_ok_trab' : 'err_sql', 'ok' => $ok_exec ? '1' : '0']);
+            }
+        } else {
+            // Insert nuevo
+            $stmt = $conexion->prepare("INSERT INTO trabajadores (nombre, apellidos, dni, activo) VALUES (?, ?, ?, 1)");
+            $stmt->bind_param("sss", $n, $a, $d);
+            $ok_exec = $stmt->execute();
+            $stmt->close();
+            redirect_with(['tipo' => $tipo, 'vista' => 'lista', 'estado' => $estado, 'q' => $q, 'code' => $ok_exec ? 'alta_ok_trab' : 'err_sql', 'ok' => $ok_exec ? '1' : '0']);
+        }
+    } elseif ($tipo === 'encargados' && $rol === 'administrador') {
+        // Buscar por DNI en usuarios (rol=encargado)
+        $stmt = $conexion->prepare("SELECT id, activo FROM usuarios WHERE DNI=? AND rol='encargado' LIMIT 1");
+        $stmt->bind_param("s", $d);
+        $stmt->execute();
+        $stmt->bind_result($id_found, $act_found);
+        $exists = $stmt->fetch();
+        $stmt->close();
+
+        if ($exists) {
+            if (intval($act_found) === 1) {
+                redirect_with(['tipo' => $tipo, 'vista' => 'alta', 'estado' => $estado, 'q' => $q, 'code' => 'dup_activo', 'ok' => '0']);
+            } else {
+                // Reactivar + actualizar nombre/apellidos/contraseña
+                // IMPORTANTE: en producción usa password_hash()
+                $stmt = $conexion->prepare("UPDATE usuarios SET nombre=?, apellidos=?, contraseña=?, activo=1 WHERE id=? AND rol='encargado'");
+                $stmt->bind_param("sssi", $n, $a, $c, $id_found);
+                $ok_exec = $stmt->execute();
+                $stmt->close();
+                redirect_with(['tipo' => $tipo, 'vista' => 'lista', 'estado' => $estado, 'q' => $q, 'code' => $ok_exec ? 'react_ok_enc' : 'err_sql', 'ok' => $ok_exec ? '1' : '0']);
+            }
+        } else {
+            // Insert nuevo encargado (considera password_hash() para producción)
+            $stmt = $conexion->prepare("INSERT INTO usuarios (nombre, apellidos, DNI, rol, contraseña, activo) VALUES (?, ?, ?, 'encargado', ?, 1)");
+            $stmt->bind_param("ssss", $n, $a, $d, $c);
+            $ok_exec = $stmt->execute();
+            $stmt->close();
+            redirect_with(['tipo' => $tipo, 'vista' => 'lista', 'estado' => $estado, 'q' => $q, 'code' => $ok_exec ? 'alta_ok_enc' : 'err_sql', 'ok' => $ok_exec ? '1' : '0']);
+        }
+    } else {
+        redirect_with(['tipo' => 'trabajadores', 'vista' => 'lista', 'code' => 'sin_permiso', 'ok' => '0']);
+    }
 }
 
-$sql .= " ORDER BY activo DESC, apellidos, nombre ASC";
-$result = $conexion->query($sql);
-$usuarios = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
-?>
+/* ============================
+   CONSULTA LISTADO (SERVIDOR)
+   ============================ */
 
+if ($tipo === 'encargados' && $rol === 'administrador') {
+    $titulo = "Gestionar Encargados";
+    $base  = "FROM usuarios WHERE rol='encargado'";
+    $cols  = "id, nombre, apellidos, DNI AS dni, rol, activo";
+} else {
+    $titulo = "Gestionar Trabajadores";
+    $base  = "FROM trabajadores WHERE 1=1";
+    $cols  = "id, nombre, apellidos, dni, activo";
+}
+// Filtro estado
+if ($estado === 'activo') {
+    $base .= " AND activo=1";
+}
+if ($estado === 'inactivo') {
+    $base .= " AND activo=0";
+}
+
+// Filtro búsqueda (nombre/apellidos/dni)
+$params = [];
+$types = '';
+if ($q !== '') {
+    $base .= " AND (nombre LIKE ? OR apellidos LIKE ? OR dni LIKE ?)";
+    $like = "%{$q}%";
+    $params = [$like, $like, $like];
+    $types  = 'sss';
+}
+
+$sql = "SELECT $cols $base ORDER BY id DESC";
+$stmt = $conexion->prepare($sql);
+if (!empty($params)) {
+    $stmt->bind_param($types, ...$params);
+}
+$stmt->execute();
+$res = $stmt->get_result();
+?>
 <!DOCTYPE html>
 <html lang="es">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Gestión de Personal | Interempleo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= h($titulo) ?> - Interempleo</title>
     <style>
-        :root {
-            --color-principal: #FF671D;
-            --color-fondo: #FFFFFF;
-            --color-texto: #333333;
-            --color-borde: #CCCCCC;
+       :root {
+  --color-principal: #FF671D;
+  --color-fondo: #FFFFFF;
+  --color-texto: #333333;
+  --color-borde: #CCCCCC;
+  --color-input-bg: #F9F9F9;
+}
+
+
+        * {
+            box-sizing: border-box
         }
 
         body {
-            font-family: Arial, sans-serif;
             margin: 0;
-            background: var(--color-fondo);
-            color: var(--color-texto);
+            font-family: Arial, Helvetica, sans-serif;
+            background: var(--bg);
+            color: var(--texto)
         }
 
-        header {
-            background: var(--color-principal);
-            color: white;
-            padding: 1.2rem 2rem;
-        }
-
-        .contenedor-barra {
+        .topbar {
+            background: var(--naranja);
+            color: #fff;
+            padding: 12px 16px;
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: center
         }
 
-        nav {
-            margin-top: 0.8rem;
+        .brand {
+            font-weight: 700
+        }
+
+        .user {
+            font-size: 14px
+        }
+
+        .wrap {
+            max-width: 1000px;
+            margin: 18px auto;
+            padding: 0 16px
+        }
+
+        .actions {
             display: flex;
-            justify-content: center;
-            gap: 1rem;
+            gap: 10px;
+            margin: 8px 0 12px
         }
 
-        nav a {
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            text-decoration: none;
-            font-weight: bold;
-            border: 1px solid var(--color-principal);
-            transition: 0.2s ease;
-        }
-
-        .tipo-usuario a {
-            background: #fff;
-            color: var(--color-principal);
-        }
-
-        .tipo-usuario a.active {
-            background: var(--color-principal);
-            color: #fff;
-        }
-
-        .acciones a {
-            background: white;
-            color: var(--color-principal);
-        }
-
-        .acciones a.active {
-            background: var(--color-principal);
-            color: white;
-        }
-
-        main {
-            max-width: 800px;
-            margin: 2rem auto;
-            padding: 0 1rem;
-        }
-
-        h2 {
-            text-align: center;
-            color: var(--color-principal);
-        }
-
-        .tarjeta {
-            background: var(--color-principal);
-            color: white;
-            padding: 1rem;
+        .btn {
             border-radius: 8px;
-            margin: 1rem 0;
-        }
-
-        label {
-            font-weight: bold;
-            display: block;
-            margin-bottom: .3rem;
-        }
-
-        input,
-        select {
-            width: 100%;
-            padding: .6rem;
-            border-radius: 4px;
-            border: none;
-            margin-bottom: 1rem;
-        }
-
-        button {
-            width: 100%;
-            padding: .9rem;
-            background: var(--color-principal);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-weight: bold;
+            padding: 10px 18px;
+            font-weight: 600;
             cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
         }
 
-        button:hover {
-            background: #e65c17;
+        /* Botón activo (vista actual) */
+        .btn-primary,
+        .btn.active {
+            background: var(--naranja);
+            color: #fff;
+            border-color: var(--naranja);
+            box-shadow: 0 3px 10px rgba(255, 103, 29, 0.3);
+        }
+
+        .btn-primary:hover,
+        .btn.active:hover {
+            background: #ff7f3d;
+            /* tono más claro */
+            color: #fff;
+            transform: none;
+            /* sin moverse */
+        }
+
+        /* Botón inactivo */
+        .btn-secondary {
+            background: #fff;
+            color: var(--naranja);
+            border: 2px solid var(--naranja);
+            box-shadow: none;
+        }
+
+        .btn-secondary:hover {
+            background: #ffe8dc;
+            /* tono suave que no se confunde */
+            color: var(--naranja);
+        }
+
+
+        .panel {
+            border: 1px solid var(--borde);
+            border-radius: 12px;
+            padding: 16px
+        }
+
+        .banner {
+            padding: 10px 12px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            font-weight: 700
+        }
+
+        .ok {
+            background: #e8f8ee;
+            color: #116c2f;
+            border: 1px solid #bfe8cc
+        }
+
+        .err {
+            background: #fdecec;
+            color: #8a1f1f;
+            border: 1px solid #f5bdbd
+        }
+
+        .filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+            align-items: center
+        }
+
+        .filters input,
+        .filters select {
+            border: 1px solid var(--borde);
+            border-radius: 8px;
+            padding: 8px;
+            min-width: 220px
         }
 
         table {
             width: 100%;
-            border-collapse: collapse;
-            border: 1px solid var(--color-borde);
-            background: white;
+            border-collapse: collapse
+        }
+
+        th,
+        td {
+            border: 1px solid var(--borde);
+            padding: 10px;
+            text-align: center
         }
 
         th {
-            background: var(--color-principal);
+            background: #f2f2f2;
+            /* gris claro profesional */
+            color: #333;
+            /* texto oscuro legible */
+            font-weight: 700;
+        }
+
+
+        tr:nth-child(even) {
+            background: #fafafa
+        }
+
+        .estado {
+            font-weight: 700
+        }
+
+        .act {
+            color: #0a8f3a
+        }
+
+        .inact {
+            color: #c72626
+        }
+
+        .pill {
+            background: var(--naranja);
+            color: #fff;
+            border: none;
+            border-radius: 999px;
+            padding: 8px 14px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(255, 103, 29, .25);
+            transition: filter .2s
+        }
+
+        .pill:hover {
+            filter: brightness(1.03)
+        }
+
+        .form-alta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px
+        }
+
+        .form-alta input {
+            border: 1px solid var(--borde);
+            border-radius: 8px;
+            padding: 10px;
+            flex: 1 1 240px
+        }
+
+        .submit {
+            flex: 0 0 auto
+        }
+
+        /* ===== MENÚ HAMBURGUESA ===== */
+        .menu-container {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+        }
+
+        .menu-toggle {
+            font-size: 28px;
+            cursor: pointer;
             color: white;
-            padding: .5rem;
+            background: var(--naranja);
+            border-radius: 6px;
+            padding: 6px 10px;
+            transition: background 0.3s;
         }
 
-        td {
-            text-align: center;
-            padding: .5rem;
-            border-bottom: 1px solid var(--color-borde);
+        .menu-toggle:hover {
+            background: #ff7f3d;
         }
 
-        tr.inactivo td {
-            opacity: .7;
+        .menu-dropdown {
+            display: none;
+            position: absolute;
+            top: 38px;
+            left: 0;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+            min-width: 200px;
+            overflow: hidden;
         }
 
-        footer {
-            text-align: center;
-            font-size: .9rem;
-            color: #666;
-            padding: 1rem;
-            border-top: 1px solid var(--color-borde);
-            margin-top: 2rem;
+        .menu-dropdown a {
+            padding: 0.5rem 0;
+            color: var(--texto);
+            text-decoration: none;
+            border-bottom: 1px solid #eee;
+            background-color: transparent;
+        }
+
+
+        .menu-dropdown a:hover {
+            background: #f9f9f9;
+        }
+
+        .menu-dropdown a:last-child {
+            border-bottom: none;
+        }
+
+        /* ===== BARRA SUPERIOR ===== */
+        .barra-superior {
+            background-color: var(--naranja);
+            color: white;
+            padding: 1.5rem 2rem;
+            font-size: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .barra-superior p {
+            margin: 0;
+            font-weight: normal;
+            font-size: 1.4rem;
+        }
+
+        .barra-superior span {
+            font-weight: bold;
+        }
+
+       .menu-toggle {
+  font-size: 1.8rem;
+  cursor: pointer;
+  margin-right: 1rem;
+  user-select: none;
+}
+
+.menu-dropdown {
+  display: none;
+  flex-direction: column;
+  position: absolute;
+  top: 70px; /* ajusta según el alto de la barra */
+  left: 1rem;
+  background-color: white;
+  border: 1px solid #ccc;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  z-index: 9999;
+  padding: 1rem;
+  border-radius: 6px;
+  min-width: 200px;
+}
+
+.menu-dropdown a {
+  padding: 0.5rem 0;
+  color: var(--color-texto);
+  text-decoration: none;
+  border-bottom: 1px solid #eee;
+}
+
+.menu-dropdown a:last-child {
+  border-bottom: none;
+}
+
+.menu-dropdown a:hover {
+  color: var(--color-principal);
+}
+
+/* Mostrar el menú cuando se activa */
+.menu-dropdown.show {
+  display: flex;
+}
+
+       
+
+        .menu-dropdown a:last-child {
+            border-bottom: none;
+        }
+
+
+        /* Responsive ajustes */
+        @media (max-width: 768px) {
+            .barra-superior {
+                flex-direction: row;
+                justify-content: flex-start;
+                align-items: center;
+                padding: 1rem;
+                gap: 1rem;
+            }
+
+            .barra-superior p {
+                font-size: 1.2rem;
+            }
         }
     </style>
 </head>
 
+<!-- 🔎 Buscador en tiempo real (ignora tildes, busca por nombre + apellido o DNI) -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const buscador = document.querySelector('input[name="q"]');
+        if (!buscador) return;
+
+        function quitarTildes(str) {
+            return str
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "") // elimina tildes
+                .replace(/ñ/g, "n") // trata ñ como n
+                .replace(/Ñ/g, "N")
+                .toLowerCase()
+                .trim();
+        }
+
+        buscador.addEventListener("keyup", function() {
+            const texto = quitarTildes(this.value);
+            const partes = texto.split(/\s+/); // divide en palabras: ej. "juan pe"
+            const filas = document.querySelectorAll("table tbody tr");
+
+            filas.forEach(fila => {
+                const contenido = quitarTildes(fila.textContent);
+                const coincide = partes.every(p => contenido.includes(p)); // todas las partes deben aparecer
+                fila.style.display = coincide ? "" : "none";
+            });
+        });
+    });
+</script>
+
+
+
+
+
 <body>
-    <header>
-        <div class="contenedor-barra">
-            <p><span>Inter</span>empleo - Gestión de Personal</p>
-            <a class="boton-enlace" href="asistencia_responsive.php" style="color:white;">Volver a asistencias</a>
+   <!-- 🔸 Barra superior unificada -->
+<div class="barra-superior">
+  <div name="en_linea" style="text-align:left">
+    <div style="display:inline-block; width:10%; margin-right:40%; vertical-align:top;" class="menu-toggle" onclick="toggleMenu()">☰</div>
+    <p style="text-align:center; display:inline-block; width:45%;"><span>Inter</span>empleo - Asistencia</p>
+  </div>
+
+  <div class="menu-dropdown" id="menuDropdown">
+    <a href="gestionar-personal.php?tipo=trabajadores&vista=lista">Gestión de trabajadores</a>
+    <?php
+    if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'administrador') {
+        echo '<a href="gestionar-personal.php?tipo=encargados&vista=lista">Gestión de encargados</a>';
+    }
+    ?>
+    <a href="exportar_excel.php">Exportar excel/PDF</a>
+    <a href="cerrar_sesion.php">Cerrar sesión</a>
+  </div>
+</div>
+
+
+
+
+    <div class="wrap">
+
+        <div class="actions">
+            <a class="btn <?= $vista === 'lista' ? 'btn-primary active' : 'btn-secondary' ?>" href="?tipo=<?= h($tipo) ?>&vista=lista&estado=<?= h($estado) ?>&q=<?= h($q) ?>">Ver Listado</a>
+            <a class="btn <?= $vista === 'alta' ? 'btn-primary active' : 'btn-secondary' ?>" href="?tipo=<?= h($tipo) ?>&vista=alta&estado=<?= h($estado) ?>&q=<?= h($q) ?>">Dar de Alta</a>
         </div>
-        <nav class="tipo-usuario">
-            <a href="?tipo=encargado&accion=<?= $accion ?>" class="<?= $tipo === 'encargado' ? 'active' : '' ?>">🟧 Encargados</a>
-            <a href="?tipo=trabajador&accion=<?= $accion ?>" class="<?= $tipo === 'trabajador' ? 'active' : '' ?>">🟩 Trabajadores</a>
-        </nav>
-        <nav class="acciones">
-            <a href="?tipo=<?= $tipo ?>&accion=alta" class="<?= $accion === 'alta' ? 'active' : '' ?>">➕ Alta</a>
-            <a href="?tipo=<?= $tipo ?>&accion=baja" class="<?= $accion === 'baja' ? 'active' : '' ?>">❌ Baja</a>
-            <a href="?tipo=<?= $tipo ?>&accion=listar" class="<?= $accion === 'listar' ? 'active' : '' ?>">📋 Lista</a>
-        </nav>
-    </header>
 
-    <main>
-        <?php if ($accion === 'alta'): ?>
-            <h2>Dar de alta <?= $tipo ?></h2>
-            <form method="post">
-                <div class="tarjeta">
-                    <label>Nombre</label>
-                    <input type="text" name="nombre" required>
-                    <label>Apellidos</label>
-                    <input type="text" name="apellidos" required>
-                    <label>DNI / NIE</label>
-                    <input type="text" name="dni" required>
-                    <label>Contraseña</label>
-                    <input type="password" name="password" required>
-                </div>
-                <button type="submit">Registrar</button>
-            </form>
 
-        <?php elseif ($accion === 'baja'): ?>
-            <h2>Dar de baja <?= $tipo ?></h2>
-            <?php if (empty($usuarios)): ?>
-                <p>No hay <?= $tipo ?>s registrados.</p>
-            <?php else: ?>
-                <form method="post" onsubmit="return confirmarBaja();">
-                    <div class="tarjeta">
-                        <label>Seleccione <?= $tipo ?></label>
-                        <select name="usuario_id" id="usuario_id" required>
-                            <option value="" disabled selected>-- Seleccione <?= $tipo ?> --</option>
-                            <?php foreach ($usuarios as $u): ?>
-                                <option value="<?= $u['id'] ?>"><?= htmlspecialchars($u['apellidos'] . " " . $u['nombre']) . " - " . $u['dni'] ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                        <label>DNI/NIE</label>
-                        <input type="text" name="dni" id="dni" required>
-                    </div>
-                    <button type="submit">Dar de baja</button>
-                </form>
-                <script>
-                    const select = document.getElementById('usuario_id');
-                    const dniInput = document.getElementById('dni');
-                    const lista = <?= json_encode($usuarios) ?>;
-                    select.addEventListener('change', () => {
-                        const u = lista.find(x => x.id == select.value);
-                        dniInput.value = u ? u.dni : '';
-                    });
 
-                    function confirmarBaja() {
-                        if (!select.value) return false;
-                        const txt = select.options[select.selectedIndex].text;
-                        return confirm(`¿Dar de baja a ${txt}?`);
-                    }
-                </script>
-            <?php endif; ?>
 
-        <?php elseif ($accion === 'listar'): ?>
-            <h2>Lista de <?= $tipo ?>s</h2>
-            <?php if (empty($usuarios)): ?>
-                <p>No hay <?= $tipo ?>s registrados.</p>
-            <?php else: ?>
-                <div class="tabla-scroll">
-                    <table>
-                        <tr>
-                            <th>Nombre</th>
-                            <th>Apellidos</th>
-                            <th>DNI</th>
-                            <th>Estado</th>
-                        </tr>
-                        <?php foreach ($usuarios as $u): ?>
-                            <tr class="<?= $u['activo'] ? '' : 'inactivo' ?>">
-                                <td><?= htmlspecialchars($u['nombre']) ?></td>
-                                <td><?= htmlspecialchars($u['apellidos']) ?></td>
-                                <td><?= htmlspecialchars($u['dni']) ?></td>
-                                <td><?= $u['activo'] ? '🟩 Activo' : '🟥 Inactivo' ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </table>
-                </div>
-            <?php endif; ?>
+        <?php if ($code): ?>
+            <div class="banner <?= $ok ? 'ok' : 'err' ?>"><?= h($MSG[$code] ?? 'Operación realizada.') ?></div>
         <?php endif; ?>
 
-        <?= $mensaje ?>
-    </main>
-    <footer>&copy; <?= date("Y") ?> Interempleo. Todos los derechos reservados.</footer>
+        <div class="panel">
+            <?php if ($vista === 'alta'): ?>
+                <form class="form-alta" method="POST">
+                    <input type="hidden" name="accion" value="alta">
+                    <input type="text" name="nombre" placeholder="Nombre" required>
+                    <input type="text" name="apellidos" placeholder="Apellidos" required>
+                    <input type="text" name="dni" placeholder="DNI" required>
+                    <?php if ($tipo === 'encargados' && $rol === 'administrador'): ?>
+                        <input type="password" name="contraseña" placeholder="Contraseña" required>
+                    <?php endif; ?>
+                    <button class="btn submit" type="submit">Guardar</button>
+                </form>
+            <?php else: ?>
+                <!-- Filtros solo en "Ver Listado" -->
+                <form class="filters" method="GET">
+                    <input type="hidden" name="tipo" value="<?= h($tipo) ?>">
+                    <input type="hidden" name="vista" value="lista">
+                    <label>Estado:
+                        <select name="estado" onchange="this.form.submit()">
+                            <option value="todos" <?= $estado === 'todos' ? 'selected' : '' ?>>Todos</option>
+                            <option value="activo" <?= $estado === 'activo' ? 'selected' : '' ?>>Activo</option>
+                            <option value="inactivo" <?= $estado === 'inactivo' ? 'selected' : '' ?>>Inactivo</option>
+                        </select>
+                    </label>
+                    <input type="text" name="q" value="<?= h($q) ?>" placeholder="Buscador por DNI o Nombre + Apellido">
+                    <button class="btn outline" type="submit">Filtrar</button>
+                </form>
+
+                <table>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Apellidos</th>
+                        <th>DNI</th>
+                        <?php if ($tipo === 'encargados' && $rol === 'administrador'): ?>
+                            <th>Rol</th>
+                        <?php endif; ?>
+                        <th>Estado</th>
+                        <th>Dar de baja</th>
+                    </tr>
+                    <?php while ($fila = $res->fetch_assoc()): ?>
+                        <tr>
+                            <td><?= h($fila['nombre']) ?></td>
+                            <td><?= h($fila['apellidos']) ?></td>
+                            <td><?= h($fila['dni']) ?></td>
+                            <?php if ($tipo === 'encargados' && $rol === 'administrador'): ?>
+                                <td><?= h($fila['rol']) ?></td>
+                            <?php endif; ?>
+                            <?php $activo = intval($fila['activo']) === 1; ?>
+                            <td class="estado <?= $activo ? 'act' : 'inact' ?>"><?= $activo ? '● Activo' : '● Inactivo' ?></td>
+                            <td>
+                                <?php if ($activo): ?>
+                                    <form method="POST" onsubmit="return confirm('¿Dar de baja este registro?');" style="margin:0;">
+                                        <input type="hidden" name="accion" value="baja">
+                                        <input type="hidden" name="id" value="<?= h($fila['id']) ?>">
+                                        <button type="submit" class="pill">Dar de baja</button>
+                                    </form>
+                                <?php else: ?>
+                                    <span style="opacity:.6;">—</span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endwhile;
+                    $stmt->close(); ?>
+                </table>
+            <?php endif; ?>
+        </div>
+
+        <div style="text-align:center;margin:14px 0;">
+            <a class="btn outline" href="index.php">← Volver al inicio</a>
+        </div>
+    </div>
+    <script>
+        function toggleMenu() {
+            const menu = document.getElementById('menuDropdown');
+            menu.classList.toggle('show');
+        }
+
+        // Cierra el menú si haces clic fuera
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('menuDropdown');
+            const toggle = document.querySelector('.menu-toggle');
+
+            if (!menu.contains(e.target) && e.target !== toggle) {
+                menu.classList.remove('show');
+            }
+        });
+    </script>
+
+
+
+
 </body>
 
 </html>
