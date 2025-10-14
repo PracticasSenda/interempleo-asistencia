@@ -319,12 +319,12 @@ include("validar_sesion.php");
     </div>
 
     <div class="menu-dropdown" id="menuDropdown">
-    <a href="gestionar-personal.php?tipo=trabajador&vista=ver_listado">Gestión de trabajadores</a>
-<?php if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'administrador'): ?>
-  <a href="gestionar-personal.php?tipo=encargado&vista=ver_listado">Gestión de encargados</a>
-<?php endif; ?>
-<a href="exportar_excel_pdf.php">Exportar Excel/PDF</a>
-<a href="cerrar_sesion.php">Cerrar sesión</a>
+      <a href="gestionar-personal.php?tipo=trabajador&vista=ver_listado">Gestión de trabajadores</a>
+      <?php if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'administrador'): ?>
+        <a href="gestionar-personal.php?tipo=encargado&vista=ver_listado">Gestión de encargados</a>
+      <?php endif; ?>
+      <a href="exportar_excel_pdf.php">Exportar Excel/PDF</a>
+      <a href="cerrar_sesion.php">Cerrar sesión</a>
 
     </div>
 
@@ -642,12 +642,11 @@ include("validar_sesion.php");
       }
     });
     // Cierra el menú al hacer clic en un enlace del menú
-document.querySelectorAll('.menu-dropdown a').forEach(enlace => {
-  enlace.addEventListener('click', () => {
-    document.getElementById('menuDropdown').classList.remove('show');
-  });
-});
-
+    document.querySelectorAll('.menu-dropdown a').forEach(enlace => {
+      enlace.addEventListener('click', () => {
+        document.getElementById('menuDropdown').classList.remove('show');
+      });
+    });
   </script>
 
 

@@ -677,7 +677,18 @@ $res = $stmt->get_result();
         <div class="contenedor-barra">
             <div class="lado-izquierdo">
                 <button class="menu-toggle" onclick="toggleMenu()">☰</button>
-                <p><span>Inter</span>empleo - Gestionar Personal</p>
+                <p>
+                    <span>Inter</span>empleo -
+                    <?php
+                    if ($tipo === 'trabajadores') {
+                        echo 'Gestionar Trabajadores';
+                    } elseif ($tipo === 'encargados') {
+                        echo 'Gestionar Encargados';
+                    } else {
+                        echo 'Gestionar Personal';
+                    }
+                    ?>
+                </p>
             </div>
             <div class="bienvenida">
                 Bienvenido, <?= htmlspecialchars($nombre_completo) ?>
