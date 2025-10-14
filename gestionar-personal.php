@@ -158,7 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['
 if ($tipo === 'encargados' && $rol === 'administrador') {
     $titulo = "Gestionar Encargados";
     $base  = "FROM usuarios WHERE rol='encargado'";
-    $cols  = "id, nombre, apellidos, DNI AS dni, rol, activo";
+    $cols  = "id, nombre, apellidos, DNI AS dni, activo";
 } else {
     $titulo = "Gestionar Trabajadores";
     $base  = "FROM trabajadores WHERE 1=1";
@@ -198,53 +198,155 @@ $res = $stmt->get_result();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= h($titulo) ?> - Interempleo</title>
     <style>
-       :root {
-  --color-principal: #FF671D;
-  --color-fondo: #FFFFFF;
-  --color-texto: #333333;
-  --color-borde: #CCCCCC;
-  --color-input-bg: #F9F9F9;
-}
-
+        /* =========================================================
+   🎨 VARIABLES Y ESTILOS BASE
+   ========================================================= */
+        :root {
+            --naranja: #FF671D;
+            --borde: #DDDDDD;
+            --texto: #333;
+            --bg: #fff;
+        }
 
         * {
-            box-sizing: border-box
+            box-sizing: border-box;
         }
 
         body {
             margin: 0;
             font-family: Arial, Helvetica, sans-serif;
             background: var(--bg);
-            color: var(--texto)
+            color: var(--texto);
         }
 
-        .topbar {
-            background: var(--naranja);
-            color: #fff;
-            padding: 12px 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center
-        }
-
-        .brand {
-            font-weight: 700
-        }
-
-        .user {
-            font-size: 14px
-        }
-
+        /* =========================================================
+   🧭 ESTRUCTURA GENERAL
+   ========================================================= */
         .wrap {
             max-width: 1000px;
             margin: 18px auto;
-            padding: 0 16px
+            padding: 0 16px;
         }
 
+        /* =========================================================
+   🔸 BARRA SUPERIOR / ENCABEZADO
+   ========================================================= */
+        .barra-superior {
+            background-color: var(--naranja);
+            color: white;
+            padding: 1.2rem 2rem;
+            font-size: 1.4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        .contenedor-barra {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .lado-izquierdo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .lado-izquierdo p {
+            margin: 0;
+            font-size: 1.4rem;
+        }
+
+        .lado-izquierdo span {
+            font-weight: bold;
+        }
+
+        .bienvenida {
+            font-size: 1rem;
+            font-weight: bold;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        /* =========================================================
+   🍔 MENÚ HAMBURGUESA Y DESPLEGABLE
+   ========================================================= */
+        .menu-toggle {
+            font-size: 1.8rem;
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: white;
+            transition: transform 0.2s;
+        }
+
+        .menu-toggle:hover {
+            transform: scale(1.15);
+        }
+
+        .menu-dropdown {
+            display: none;
+            flex-direction: column;
+            position: absolute;
+            top: 100%;
+            left: 2rem;
+            background: #fff;
+            border: 1px solid #ddd;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            overflow: hidden;
+            animation: fadeIn 0.2s ease;
+            min-width: 230px;
+            z-index: 9999;
+        }
+
+        .menu-dropdown.show {
+            display: flex;
+        }
+
+        .menu-dropdown a {
+            color: #333;
+            padding: 12px 16px;
+            text-decoration: none;
+            border-bottom: 1px solid #eee;
+            font-weight: 500;
+        }
+
+        .menu-dropdown a:hover {
+            background-color: #f9f9f9;
+            color: var(--naranja);
+        }
+
+        .menu-dropdown a:last-child {
+            border-bottom: none;
+        }
+
+        /* Animación del menú */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* =========================================================
+   ⚙️ BOTONES Y ACCIONES
+   ========================================================= */
         .actions {
             display: flex;
             gap: 10px;
-            margin: 8px 0 12px
+            margin: 8px 0 12px;
+            flex-wrap: wrap;
         }
 
         .btn {
@@ -258,9 +360,9 @@ $res = $stmt->get_result();
             justify-content: center;
             transition: all 0.2s ease;
             border: 2px solid transparent;
+            font-size: 1rem;
         }
 
-        /* Botón activo (vista actual) */
         .btn-primary,
         .btn.active {
             background: var(--naranja);
@@ -272,58 +374,79 @@ $res = $stmt->get_result();
         .btn-primary:hover,
         .btn.active:hover {
             background: #ff7f3d;
-            /* tono más claro */
             color: #fff;
-            transform: none;
-            /* sin moverse */
         }
 
-        /* Botón inactivo */
         .btn-secondary {
             background: #fff;
             color: var(--naranja);
             border: 2px solid var(--naranja);
-            box-shadow: none;
         }
 
         .btn-secondary:hover {
             background: #ffe8dc;
-            /* tono suave que no se confunde */
             color: var(--naranja);
         }
 
-
+        /* =========================================================
+   📋 FORMULARIOS Y PANELES
+   ========================================================= */
         .panel {
             border: 1px solid var(--borde);
             border-radius: 12px;
-            padding: 16px
+            padding: 16px;
+            overflow-x: auto;
+            /* permite scroll en móvil */
         }
 
+        .form-alta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .form-alta input {
+            border: 1px solid var(--borde);
+            border-radius: 8px;
+            padding: 10px;
+            flex: 1 1 240px;
+        }
+
+        .submit {
+            flex: 0 0 auto;
+        }
+
+        /* =========================================================
+   ✅ MENSAJES
+   ========================================================= */
         .banner {
             padding: 10px 12px;
             border-radius: 10px;
             margin-bottom: 10px;
-            font-weight: 700
+            font-weight: 700;
         }
 
         .ok {
             background: #e8f8ee;
             color: #116c2f;
-            border: 1px solid #bfe8cc
+            border: 1px solid #bfe8cc;
         }
 
         .err {
             background: #fdecec;
             color: #8a1f1f;
-            border: 1px solid #f5bdbd
+            border: 1px solid #f5bdbd;
         }
 
+        /* =========================================================
+   🔍 FILTROS Y BUSCADOR
+   ========================================================= */
         .filters {
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
             margin-bottom: 10px;
-            align-items: center
+            align-items: center;
         }
 
         .filters input,
@@ -331,46 +454,51 @@ $res = $stmt->get_result();
             border: 1px solid var(--borde);
             border-radius: 8px;
             padding: 8px;
-            min-width: 220px
+            min-width: 220px;
+            font-size: 1rem;
         }
 
+        /* =========================================================
+   📊 TABLAS Y ESTADOS
+   ========================================================= */
         table {
             width: 100%;
-            border-collapse: collapse
+            border-collapse: collapse;
+            font-size: 1rem;
         }
 
         th,
         td {
             border: 1px solid var(--borde);
             padding: 10px;
-            text-align: center
+            text-align: center;
         }
 
         th {
             background: #f2f2f2;
-            /* gris claro profesional */
             color: #333;
-            /* texto oscuro legible */
             font-weight: 700;
         }
 
-
         tr:nth-child(even) {
-            background: #fafafa
+            background: #fafafa;
         }
 
         .estado {
-            font-weight: 700
+            font-weight: 700;
         }
 
         .act {
-            color: #0a8f3a
+            color: #0a8f3a;
         }
 
         .inact {
-            color: #c72626
+            color: #c72626;
         }
 
+        /* =========================================================
+   🟠 BOTÓN "DAR DE BAJA"
+   ========================================================= */
         .pill {
             background: var(--naranja);
             color: #fff;
@@ -380,167 +508,134 @@ $res = $stmt->get_result();
             font-weight: 700;
             cursor: pointer;
             box-shadow: 0 2px 6px rgba(255, 103, 29, .25);
-            transition: filter .2s
+            transition: filter .2s;
         }
 
         .pill:hover {
-            filter: brightness(1.03)
+            filter: brightness(1.03);
         }
 
-        .form-alta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px
-        }
-
-        .form-alta input {
-            border: 1px solid var(--borde);
-            border-radius: 8px;
-            padding: 10px;
-            flex: 1 1 240px
-        }
-
-        .submit {
-            flex: 0 0 auto
-        }
-
-        /* ===== MENÚ HAMBURGUESA ===== */
-        .menu-container {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            z-index: 1000;
-        }
-
-        .menu-toggle {
-            font-size: 28px;
-            cursor: pointer;
-            color: white;
-            background: var(--naranja);
-            border-radius: 6px;
-            padding: 6px 10px;
-            transition: background 0.3s;
-        }
-
-        .menu-toggle:hover {
-            background: #ff7f3d;
-        }
-
-        .menu-dropdown {
-            display: none;
-            position: absolute;
-            top: 38px;
-            left: 0;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
-            min-width: 200px;
-            overflow: hidden;
-        }
-
-        .menu-dropdown a {
-            padding: 0.5rem 0;
-            color: var(--texto);
-            text-decoration: none;
-            border-bottom: 1px solid #eee;
-            background-color: transparent;
-        }
-
-
-        .menu-dropdown a:hover {
-            background: #f9f9f9;
-        }
-
-        .menu-dropdown a:last-child {
-            border-bottom: none;
-        }
-
-        /* ===== BARRA SUPERIOR ===== */
-        .barra-superior {
-            background-color: var(--naranja);
-            color: white;
-            padding: 1.5rem 2rem;
-            font-size: 1.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .barra-superior p {
-            margin: 0;
-            font-weight: normal;
-            font-size: 1.4rem;
-        }
-
-        .barra-superior span {
-            font-weight: bold;
-        }
-
-       .menu-toggle {
-  font-size: 1.8rem;
-  cursor: pointer;
-  margin-right: 1rem;
-  user-select: none;
-}
-
-.menu-dropdown {
-  display: none;
-  flex-direction: column;
-  position: absolute;
-  top: 70px; /* ajusta según el alto de la barra */
-  left: 1rem;
-  background-color: white;
-  border: 1px solid #ccc;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  z-index: 9999;
-  padding: 1rem;
-  border-radius: 6px;
-  min-width: 200px;
-}
-
-.menu-dropdown a {
-  padding: 0.5rem 0;
-  color: var(--color-texto);
-  text-decoration: none;
-  border-bottom: 1px solid #eee;
-}
-
-.menu-dropdown a:last-child {
-  border-bottom: none;
-}
-
-.menu-dropdown a:hover {
-  color: var(--color-principal);
-}
-
-/* Mostrar el menú cuando se activa */
-.menu-dropdown.show {
-  display: flex;
-}
-
-       
-
-        .menu-dropdown a:last-child {
-            border-bottom: none;
-        }
-
-
-        /* Responsive ajustes */
-        @media (max-width: 768px) {
+        /* =========================================================
+   📱 RESPONSIVE - TABLETS Y MÓVILES
+   ========================================================= */
+        @media (max-width: 900px) {
             .barra-superior {
-                flex-direction: row;
-                justify-content: flex-start;
-                align-items: center;
+                flex-wrap: wrap;
                 padding: 1rem;
-                gap: 1rem;
+                gap: 0.5rem;
             }
 
-            .barra-superior p {
+            .bienvenida {
+                display: none;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            table {
+                font-size: 0.9rem;
+            }
+
+            th,
+            td {
+                padding: 8px;
+            }
+
+            .filters input,
+            .filters select {
+                min-width: 100%;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .barra-superior {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .lado-izquierdo p {
                 font-size: 1.2rem;
             }
+
+            .actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            table {
+                font-size: 0.85rem;
+            }
+
+            th,
+            td {
+                padding: 6px;
+            }
+        }
+
+
+        /* === AJUSTE VISUAL PARA FILTROS === */
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            justify-content: flex-start;
+        }
+
+        .filters label {
+            font-weight: bold;
+            font-size: 0.95rem;
+        }
+
+        .filters select,
+        .filters input {
+            border: 1px solid var(--borde);
+            border-radius: 6px;
+            padding: 8px;
+            font-size: 0.95rem;
+        }
+
+        .filters input {
+            flex: 1;
+            min-width: 180px;
+        }
+
+
+
+
+        /* 🔹 En pantallas pequeñas: buscador y botón a la misma línea */
+        @media (max-width: 768px) {
+            .filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filters select,
+            .filters input {
+                width: 100%;
+            }
+        }
+
+        /* Diferenciar visualmente el modal de alta */
+        #modalAlta .modal-box h3 {
+            color: #28a745;
+            /* verde */
+        }
+
+        #modalAlta .btn-confirmar {
+            background: #28a745;
+        }
+
+        #modalAlta .btn-confirmar:hover {
+            background: #33c754;
         }
     </style>
+
 </head>
 
 <!-- 🔎 Buscador en tiempo real (ignora tildes, busca por nombre + apellido o DNI) -->
@@ -578,25 +673,26 @@ $res = $stmt->get_result();
 
 
 <body>
-   <!-- 🔸 Barra superior unificada -->
-<div class="barra-superior">
-  <div name="en_linea" style="text-align:left">
-    <div style="display:inline-block; width:10%; margin-right:40%; vertical-align:top;" class="menu-toggle" onclick="toggleMenu()">☰</div>
-    <p style="text-align:center; display:inline-block; width:45%;"><span>Inter</span>empleo - Asistencia</p>
-  </div>
+    <div class="barra-superior">
+        <div class="contenedor-barra">
+            <div class="lado-izquierdo">
+                <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+                <p><span>Inter</span>empleo - Gestionar Personal</p>
+            </div>
+            <div class="bienvenida">
+                Bienvenido, <?= htmlspecialchars($nombre_completo) ?>
+            </div>
+        </div>
 
-  <div class="menu-dropdown" id="menuDropdown">
-    <a href="gestionar-personal.php?tipo=trabajadores&vista=lista">Gestión de trabajadores</a>
-    <?php
-    if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'administrador') {
-        echo '<a href="gestionar-personal.php?tipo=encargados&vista=lista">Gestión de encargados</a>';
-    }
-    ?>
-    <a href="exportar_excel.php">Exportar excel/PDF</a>
-    <a href="cerrar_sesion.php">Cerrar sesión</a>
-  </div>
-</div>
-
+        <div class="menu-dropdown" id="menuDropdown">
+            <a href="gestionar-personal.php?tipo=trabajadores&vista=lista">Gestión de trabajadores</a>
+            <?php if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'administrador'): ?>
+                <a href="gestionar-personal.php?tipo=encargados&vista=lista">Gestión de encargados</a>
+            <?php endif; ?>
+            <a href="exportar_excel_pdf.php">Exportar Excel/PDF</a>
+            <a href="cerrar_sesion.php">Cerrar sesión</a>
+        </div>
+    </div>
 
 
 
@@ -606,7 +702,6 @@ $res = $stmt->get_result();
             <a class="btn <?= $vista === 'lista' ? 'btn-primary active' : 'btn-secondary' ?>" href="?tipo=<?= h($tipo) ?>&vista=lista&estado=<?= h($estado) ?>&q=<?= h($q) ?>">Ver Listado</a>
             <a class="btn <?= $vista === 'alta' ? 'btn-primary active' : 'btn-secondary' ?>" href="?tipo=<?= h($tipo) ?>&vista=alta&estado=<?= h($estado) ?>&q=<?= h($q) ?>">Dar de Alta</a>
         </div>
-
 
 
 
@@ -628,9 +723,10 @@ $res = $stmt->get_result();
                 </form>
             <?php else: ?>
                 <!-- Filtros solo en "Ver Listado" -->
-                <form class="filters" method="GET">
+                <form class="filters" method="GET" onsubmit="return false;">
                     <input type="hidden" name="tipo" value="<?= h($tipo) ?>">
                     <input type="hidden" name="vista" value="lista">
+
                     <label>Estado:
                         <select name="estado" onchange="this.form.submit()">
                             <option value="todos" <?= $estado === 'todos' ? 'selected' : '' ?>>Todos</option>
@@ -638,18 +734,26 @@ $res = $stmt->get_result();
                             <option value="inactivo" <?= $estado === 'inactivo' ? 'selected' : '' ?>>Inactivo</option>
                         </select>
                     </label>
-                    <input type="text" name="q" value="<?= h($q) ?>" placeholder="Buscador por DNI o Nombre + Apellido">
-                    <button class="btn outline" type="submit">Filtrar</button>
+
+                    <div style="position: relative; flex:1;">
+                        <input
+                            type="text"
+                            name="q"
+                            id="buscador"
+                            value="<?= h($q) ?>"
+                            placeholder="Buscador por DNI, Nombre o Apellido"
+                            autocomplete="off"
+                            style="width:100%;">
+                    </div>
+
                 </form>
+
 
                 <table>
                     <tr>
                         <th>Nombre</th>
                         <th>Apellidos</th>
                         <th>DNI</th>
-                        <?php if ($tipo === 'encargados' && $rol === 'administrador'): ?>
-                            <th>Rol</th>
-                        <?php endif; ?>
                         <th>Estado</th>
                         <th>Dar de baja</th>
                     </tr>
@@ -658,21 +762,33 @@ $res = $stmt->get_result();
                             <td><?= h($fila['nombre']) ?></td>
                             <td><?= h($fila['apellidos']) ?></td>
                             <td><?= h($fila['dni']) ?></td>
-                            <?php if ($tipo === 'encargados' && $rol === 'administrador'): ?>
-                                <td><?= h($fila['rol']) ?></td>
-                            <?php endif; ?>
+
                             <?php $activo = intval($fila['activo']) === 1; ?>
                             <td class="estado <?= $activo ? 'act' : 'inact' ?>"><?= $activo ? '● Activo' : '● Inactivo' ?></td>
                             <td>
                                 <?php if ($activo): ?>
-                                    <form method="POST" onsubmit="return confirm('¿Dar de baja este registro?');" style="margin:0;">
+                                    <form method="POST"
+                                        onsubmit="return abrirModalBaja(this, '<?= h($fila['nombre']) ?> <?= h($fila['apellidos']) ?>');"
+                                        style="margin:0;">
                                         <input type="hidden" name="accion" value="baja">
                                         <input type="hidden" name="id" value="<?= h($fila['id']) ?>">
                                         <button type="submit" class="pill">Dar de baja</button>
                                     </form>
                                 <?php else: ?>
-                                    <span style="opacity:.6;">—</span>
+                                    <form method="POST"
+                                        onsubmit="return abrirModalAlta(this, '<?= h($fila['nombre']) ?> <?= h($fila['apellidos']) ?>');"
+                                        style="margin:0;">
+                                        <input type="hidden" name="accion" value="alta">
+                                        <input type="hidden" name="nombre" value="<?= h($fila['nombre']) ?>">
+                                        <input type="hidden" name="apellidos" value="<?= h($fila['apellidos']) ?>">
+                                        <input type="hidden" name="dni" value="<?= h($fila['dni']) ?>">
+                                        <?php if ($tipo === 'encargados' && $rol === 'administrador'): ?>
+                                            <input type="hidden" name="contraseña" value="1234">
+                                        <?php endif; ?>
+                                        <button type="submit" class="pill" style="background:#28a745;">Reactivar</button>
+                                    </form>
                                 <?php endif; ?>
+
                             </td>
                         </tr>
                     <?php endwhile;
@@ -680,30 +796,250 @@ $res = $stmt->get_result();
                 </table>
             <?php endif; ?>
         </div>
+        <div style="height: 35px;"></div>
 
-        <div style="text-align:center;margin:14px 0;">
-            <a class="btn outline" href="index.php">← Volver al inicio</a>
-        </div>
-    </div>
-    <script>
-        function toggleMenu() {
-            const menu = document.getElementById('menuDropdown');
-            menu.classList.toggle('show');
-        }
+        <footer style="
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: #fff;
+  text-align: center;
+  padding: 1rem;
+  color: #888;
+  font-size: 0.9rem;
+  border-top: 1px solid #eee;
+  z-index: 100;
+">
+            © 2025 Interempleo · Todos los derechos reservados
+        </footer>
 
-        // Cierra el menú si haces clic fuera
-        document.addEventListener('click', function(e) {
-            const menu = document.getElementById('menuDropdown');
-            const toggle = document.querySelector('.menu-toggle');
 
-            if (!menu.contains(e.target) && e.target !== toggle) {
-                menu.classList.remove('show');
+
+        <script>
+            function toggleMenu() {
+                const menu = document.getElementById('menuDropdown');
+                menu.classList.toggle('show');
             }
-        });
-    </script>
 
+            // Cierra el menú si haces clic fuera
+            document.addEventListener('click', function(e) {
+                const menu = document.getElementById('menuDropdown');
+                const toggle = document.querySelector('.menu-toggle');
 
+                if (!menu.contains(e.target) && e.target !== toggle) {
+                    menu.classList.remove('show');
+                }
+            });
+        </script>
 
+        <script>
+            // 🔍 Buscador en tiempo real (ignora tildes)
+            document.addEventListener("DOMContentLoaded", function() {
+                const buscador = document.getElementById("buscador");
+                if (!buscador) return;
+
+                function quitarTildes(str) {
+                    return str
+                        .normalize("NFD")
+                        .replace(/[\u0300-\u036f]/g, "")
+                        .replace(/ñ/g, "n")
+                        .replace(/Ñ/g, "N")
+                        .toLowerCase()
+                        .trim();
+                }
+
+                buscador.addEventListener("keyup", function() {
+                    const texto = quitarTildes(this.value);
+                    const partes = texto.split(/\s+/);
+                    const filas = document.querySelectorAll("table tbody tr");
+
+                    filas.forEach(fila => {
+                        const contenido = quitarTildes(fila.textContent);
+                        const coincide = partes.every(p => contenido.includes(p));
+                        fila.style.display = coincide ? "" : "none";
+                    });
+                });
+            });
+        </script>
+        <script>
+            function confirmarBaja(nombreCompleto) {
+                return confirm(`¿Estás seguro de que deseas dar de baja a ${nombreCompleto}?`);
+            }
+        </script>
+        <!-- 🟠 MODAL DE CONFIRMACIÓN DE BAJA -->
+        <div id="modalBaja" class="modal-overlay" style="display:none;">
+            <div class="modal-box">
+                <h3>Confirmar acción</h3>
+                <p id="modalTexto"></p>
+                <div class="modal-buttons">
+                    <button id="btnConfirmar" class="btn-confirmar">Sí, dar de baja</button>
+                    <button id="btnCancelar" class="btn-cancelar">Cancelar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🟢 MODAL DE CONFIRMACIÓN DE ALTA -->
+        <div id="modalAlta" class="modal-overlay" style="display:none;">
+            <div class="modal-box">
+                <h3>Confirmar reactivación</h3>
+                <p id="modalTextoAlta"></p>
+                <div class="modal-buttons">
+                    <button id="btnConfirmarAlta" class="btn-confirmar">Sí, dar de alta</button>
+                    <button id="btnCancelarAlta" class="btn-cancelar">Cancelar</button>
+                </div>
+            </div>
+        </div>
+
+        <style>
+            /* Fondo oscuro difuminado */
+            .modal-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.45);
+                backdrop-filter: blur(2px);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 99999;
+            }
+
+            /* Caja blanca centrada */
+            .modal-box {
+                background: #fff;
+                border-radius: 10px;
+                padding: 2rem;
+                width: 90%;
+                max-width: 400px;
+                text-align: center;
+                box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+                animation: fadeIn 0.25s ease;
+            }
+
+            .modal-box h3 {
+                margin-top: 0;
+                color: #FF671D;
+                font-size: 1.3rem;
+            }
+
+            .modal-box p {
+                font-size: 1.1rem;
+                margin: 1rem 0;
+            }
+
+            /* Botones */
+            .modal-buttons {
+                display: flex;
+                justify-content: center;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+
+            .btn-confirmar {
+                background: #FF671D;
+                color: white;
+                border: none;
+                padding: 0.6rem 1.2rem;
+                border-radius: 6px;
+                font-weight: bold;
+                cursor: pointer;
+                transition: background 0.2s;
+            }
+
+            .btn-confirmar:hover {
+                background: #ff8842;
+            }
+
+            .btn-cancelar {
+                background: #ccc;
+                border: none;
+                padding: 0.6rem 1.2rem;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: bold;
+            }
+
+            .btn-cancelar:hover {
+                background: #bdbdbd;
+            }
+
+            /* Verde para el modal de alta */
+            #modalAlta .modal-box h3 {
+                color: #28a745;
+            }
+
+            #modalAlta .btn-confirmar {
+                background: #28a745;
+            }
+
+            #modalAlta .btn-confirmar:hover {
+                background: #33c754;
+            }
+
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(-10px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+        </style>
+
+        <script>
+            // Variables para guardar qué formulario está pendiente
+            let formPendiente = null;
+
+            // Modal de BAJA
+            function abrirModalBaja(form, nombreCompleto) {
+                formPendiente = form;
+                document.getElementById("modalTexto").innerHTML =
+                    `¿Estás seguro de que deseas dar de baja a ${nombreCompleto}?`;
+                document.getElementById("modalBaja").style.display = "flex";
+                return false;
+            }
+
+            // Modal de ALTA
+            let formAltaPendiente = null;
+
+            function abrirModalAlta(form, nombreCompleto) {
+                formAltaPendiente = form;
+                document.getElementById("modalTextoAlta").innerHTML =
+                    `¿Deseas volver a dar de alta a ${nombreCompleto}?`;
+                document.getElementById("modalAlta").style.display = "flex";
+                return false;
+            }
+
+            // Botones de confirmación
+            document.getElementById("btnConfirmar").onclick = function() {
+                if (formPendiente) formPendiente.submit();
+                cerrarModal("modalBaja");
+            };
+
+            document.getElementById("btnCancelar").onclick = function() {
+                cerrarModal("modalBaja");
+            };
+
+            document.getElementById("btnConfirmarAlta").onclick = function() {
+                if (formAltaPendiente) formAltaPendiente.submit();
+                cerrarModal("modalAlta");
+            };
+
+            document.getElementById("btnCancelarAlta").onclick = function() {
+                cerrarModal("modalAlta");
+            };
+
+            // Función genérica para cerrar modales
+            function cerrarModal(id) {
+                document.getElementById(id).style.display = "none";
+            }
+        </script>
 
 </body>
 

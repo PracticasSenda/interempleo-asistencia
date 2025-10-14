@@ -3,9 +3,10 @@ include("validar_sesion.php");
 ?>
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Asistencias</title>
   <style>
     :root {
@@ -16,7 +17,9 @@ include("validar_sesion.php");
       --color-input-bg: #F9F9F9;
     }
 
-    *, *::before, *::after {
+    *,
+    *::before,
+    *::after {
       box-sizing: border-box;
     }
 
@@ -57,62 +60,64 @@ include("validar_sesion.php");
       border-radius: 4px;
       font-size: 0.95rem;
     }
+
     .menu-toggle {
-  font-size: 1.8rem;
-  cursor: pointer;
-  margin-right: 1rem;
-  user-select: none;
-}
+      font-size: 1.8rem;
+      cursor: pointer;
+      margin-right: 1rem;
+      user-select: none;
+    }
 
-.menu-dropdown {
-  display: none;
-  flex-direction: column;
-  position: absolute;
-  top: 70px; /* ajusta según el alto de la barra */
-  left: 1rem;
-  background-color: white;
-  border: 1px solid #ccc;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  z-index: 9999;
-  padding: 1rem;
-  border-radius: 6px;
-  min-width: 200px;
-}
+    .menu-dropdown {
+      display: none;
+      flex-direction: column;
+      position: absolute;
+      top: 70px;
+      /* ajusta según el alto de la barra */
+      left: 1rem;
+      background-color: white;
+      border: 1px solid #ccc;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      z-index: 9999;
+      padding: 1rem;
+      border-radius: 6px;
+      min-width: 200px;
+    }
 
-.menu-dropdown a {
-  padding: 0.5rem 0;
-  color: var(--color-texto);
-  text-decoration: none;
-  border-bottom: 1px solid #eee;
-}
+    .menu-dropdown a {
+      padding: 0.5rem 0;
+      color: var(--color-texto);
+      text-decoration: none;
+      border-bottom: 1px solid #eee;
+    }
 
-.menu-dropdown a:last-child {
-  border-bottom: none;
-}
+    .menu-dropdown a:last-child {
+      border-bottom: none;
+    }
 
-.menu-dropdown a:hover {
-  color: var(--color-principal);
-}
+    .menu-dropdown a:hover {
+      color: var(--color-principal);
+    }
 
-/* Mostrar el menú cuando se activa */
-.menu-dropdown.show {
-  display: flex;
-}
+    /* Mostrar el menú cuando se activa */
+    .menu-dropdown.show {
+      display: flex;
+    }
 
-/* Ajustes responsive */
-@media (max-width: 768px) {
-  .barra-superior {
-    flex-direction: row;
-    justify-content: flex-start;
-    align-items: center;
-    padding: 1rem;
-    gap: 1rem;
-  }
+    /* Ajustes responsive */
+    @media (max-width: 768px) {
+      .barra-superior {
+        flex-direction: row;
+        justify-content: flex-start;
+        align-items: center;
+        padding: 1rem;
+        gap: 1rem;
+      }
 
-  .barra-superior p {
-    font-size: 1.2rem;
-  }
-}
+      .barra-superior p {
+        font-size: 1.2rem;
+      }
+    }
 
 
     /* CONTENIDO */
@@ -163,7 +168,7 @@ include("validar_sesion.php");
       padding: 1.5rem;
       margin-bottom: 2rem;
       border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       font-size: 1rem;
     }
 
@@ -217,7 +222,8 @@ include("validar_sesion.php");
         align-items: flex-start;
       }
 
-      .barra-superior p, .barra-superior a {
+      .barra-superior p,
+      .barra-superior a {
         font-size: 1.1rem;
         margin-top: 0.5rem;
       }
@@ -228,6 +234,7 @@ include("validar_sesion.php");
     }
 
     @media (max-width: 600px) {
+
       .tarjeta-asistencia table,
       .tarjeta-asistencia tr,
       .tarjeta-asistencia td {
@@ -250,163 +257,165 @@ include("validar_sesion.php");
         padding: 0.8rem;
       }
     }
+
     #btn_agregar {
-  margin-bottom: 1rem;
-}#buscar_dni {
-  width: 100%;
-  padding: 0.5rem;
-}
+      margin-bottom: 1rem;
+    }
 
-#sugerencias {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: white;
-  border: 1px solid #ccc;
-  max-height: 150px;
-  overflow-y: auto;
-  z-index: 1000;
-  font-size: 0.9rem;
-}
+    #buscar_dni {
+      width: 100%;
+      padding: 0.5rem;
+    }
 
-#sugerencias div:hover {
-  background-color: #f0f0f0;
-  cursor: pointer;
-}
-#sugerencias_encargado {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: white;
-  border: 1px solid #ccc;
-  max-height: 150px;
-  overflow-y: auto;
-  z-index: 1000;
-  font-size: 0.9rem;
-}
+    #sugerencias {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid #ccc;
+      max-height: 150px;
+      overflow-y: auto;
+      z-index: 1000;
+      font-size: 0.9rem;
+    }
 
-#sugerencias_encargado div {
-  padding: 0.5rem;
-  cursor: pointer;
-  border-bottom: 1px solid #eee;
-}
+    #sugerencias div:hover {
+      background-color: #f0f0f0;
+      cursor: pointer;
+    }
 
-#sugerencias_encargado div:hover {
-  background-color: #f0f0f0;
-}
+    #sugerencias_encargado {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid #ccc;
+      max-height: 150px;
+      overflow-y: auto;
+      z-index: 1000;
+      font-size: 0.9rem;
+    }
 
+    #sugerencias_encargado div {
+      padding: 0.5rem;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+    }
 
+    #sugerencias_encargado div:hover {
+      background-color: #f0f0f0;
+    }
   </style>
 </head>
+
 <body>
 
-<div class="barra-superior">
-  <div name="en_linea" style="text-align:left">
-  <div style ="display:inline-block; width:10%; margin-right:40%; vertical-align:top;" class="menu-toggle" onclick="toggleMenu()">☰</div>
-  <p style="text-align:center; display:inline-block; width:45% ;"><span>Inter</span>empleo - Asistencia</p>
-</div>
-
-  <div class="menu-dropdown" id="menuDropdown">
-    <a href="alta-baja-trabajadores.php">Gestión de trabajadores</a>
-     <?php
-    if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'administrador') {
-        echo '<a href="alta-baja-encargados.php">Gestión de encargados</a>';
-    }
-    ?>
-    <a href="exportar_excel_pdf.php">Exportar excel/PDF</a>
-    <a href="cerrar_sesion.php">Cerrar sesión</a>
-   
-  </div>
-</div>
-
-  
-
-  </div>
-
-<div class="contenido">
-  <h2>Parte de asistencia</h2>
-
-  <form id="form-general" method="post" action="">
-    <table class="formulario-tabla">
-      <!-- campos generales: nombre_encargado, empresa, fecha, producto -->
-     <tr>
-       <td><label for="nombre_encargado">Nombre del encargado:</label></td>
-       <td>
-         <div class="campo-encargado" style="position: relative;">
-         <input type="text" name="nombre_encargado" id="nombre_encargado" autocomplete="off" required>
-            <div id="sugerencias_encargado"></div>
-         </div>
-       </td>
-    </tr>
-
-      <tr>
-        <td><label for="empresa">Empresa usuaria:</label></td>
-        <td><input type="text" name="empresa" id="empresa" required></td>
-      </tr>
-      <tr>
-        <td><label for="fecha">Fecha:</label></td>
-        <td><input type="date" name="fecha" id="fecha" value="<?php echo date('Y-m-d'); ?>" required></td>
-      </tr>
-      <tr>
-        <td><label for="producto">Producto:</label></td>
-        <td><input type="text" name="producto" id="producto" required></td>
-      </tr>
-    </table>
-
-    <p style="margin: 1rem 0 0.2rem; font-weight: bold; color: #333;">
-       Agregar trabajador al parte de asistencia:
-    </p>
-
-   <!-- Búsqueda para agregar trabajador por DNI -->
-<div style="position: relative; width: 250px; display: inline-block;">
-  <input type="text" id="buscar_dni" name="buscar_dni" autocomplete="off" placeholder="Introduce DNI">
-  <div id="sugerencias"></div>
-</div>
-
-<button type="button" id="btn_agregar">Agregar trabajador</button>
-
-
-    <!-- Aquí se van a insertar dinámicamente las tarjetas -->
-    <div id="contenedor_tarjetas">
-      <!-- tarjetas generadas aparecerán aquí -->
+  <div class="barra-superior">
+    <div name="en_linea" style="text-align:left">
+      <div style="display:inline-block; width:10%; margin-right:40%; vertical-align:top;" class="menu-toggle" onclick="toggleMenu()">☰</div>
+      <p style="text-align:center; display:inline-block; width:45% ;"><span>Inter</span>empleo - Asistencia</p>
     </div>
 
-    <button type="submit" name="enviar">Guardar asistencias</button>
-  </form>
-</div>
+    <div class="menu-dropdown" id="menuDropdown">
+    <a href="gestionar-personal.php?tipo=trabajador&vista=ver_listado">Gestión de trabajadores</a>
+<?php if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'administrador'): ?>
+  <a href="gestionar-personal.php?tipo=encargado&vista=ver_listado">Gestión de encargados</a>
+<?php endif; ?>
+<a href="exportar_excel_pdf.php">Exportar Excel/PDF</a>
+<a href="cerrar_sesion.php">Cerrar sesión</a>
 
-<script>
-// JavaScript para manejar la búsqueda y agregar tarjetas
-document.getElementById('btn_agregar').addEventListener('click', function() {
-  let dni = document.getElementById('buscar_dni').value.trim();
-  if (dni === '') {
-    alert('Introduce un DNI');
-    return;
-  }
+    </div>
 
-  // Comprobar que esa tarjeta no ya esté añadida
-  if (document.getElementById('tarjeta_' + dni)) {
-    alert('Ya has añadido ese trabajador');
-    return;
-  }
+  </div>
 
-  // Petición AJAX al servidor para obtener datos del trabajador
-  fetch('buscar_trabajador.php?dni=' + encodeURIComponent(dni))
-    .then(response => response.json())
-    .then(data => {
-      if (data.error) {
-        alert(data.error);
-      } else {
-        // Construir la tarjeta HTML
-        let cont = document.getElementById('contenedor_tarjetas');
-        let div = document.createElement('div');
-        div.className = 'tarjeta-asistencia';
-        div.id = 'tarjeta_' + dni;
 
-        // puedes construir más elegante con backticks
-        div.innerHTML = `
+
+  </div>
+
+  <div class="contenido">
+    <h2>Parte de asistencia</h2>
+
+    <form id="form-general" method="post" action="">
+      <table class="formulario-tabla">
+        <!-- campos generales: nombre_encargado, empresa, fecha, producto -->
+        <tr>
+          <td><label for="nombre_encargado">Nombre del encargado:</label></td>
+          <td>
+            <div class="campo-encargado" style="position: relative;">
+              <input type="text" name="nombre_encargado" id="nombre_encargado" autocomplete="off" required>
+              <div id="sugerencias_encargado"></div>
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <td><label for="empresa">Empresa usuaria:</label></td>
+          <td><input type="text" name="empresa" id="empresa" required></td>
+        </tr>
+        <tr>
+          <td><label for="fecha">Fecha:</label></td>
+          <td><input type="date" name="fecha" id="fecha" value="<?php echo date('Y-m-d'); ?>" required></td>
+        </tr>
+        <tr>
+          <td><label for="producto">Producto:</label></td>
+          <td><input type="text" name="producto" id="producto" required></td>
+        </tr>
+      </table>
+
+      <p style="margin: 1rem 0 0.2rem; font-weight: bold; color: #333;">
+        Agregar trabajador al parte de asistencia:
+      </p>
+
+      <!-- Búsqueda para agregar trabajador por DNI -->
+      <div style="position: relative; width: 250px; display: inline-block;">
+        <input type="text" id="buscar_dni" name="buscar_dni" autocomplete="off" placeholder="Introduce DNI">
+        <div id="sugerencias"></div>
+      </div>
+
+      <button type="button" id="btn_agregar">Agregar trabajador</button>
+
+
+      <!-- Aquí se van a insertar dinámicamente las tarjetas -->
+      <div id="contenedor_tarjetas">
+        <!-- tarjetas generadas aparecerán aquí -->
+      </div>
+
+      <button type="submit" name="enviar">Guardar asistencias</button>
+    </form>
+  </div>
+
+  <script>
+    // JavaScript para manejar la búsqueda y agregar tarjetas
+    document.getElementById('btn_agregar').addEventListener('click', function() {
+      let dni = document.getElementById('buscar_dni').value.trim();
+      if (dni === '') {
+        alert('Introduce un DNI');
+        return;
+      }
+
+      // Comprobar que esa tarjeta no ya esté añadida
+      if (document.getElementById('tarjeta_' + dni)) {
+        alert('Ya has añadido ese trabajador');
+        return;
+      }
+
+      // Petición AJAX al servidor para obtener datos del trabajador
+      fetch('buscar_trabajador.php?dni=' + encodeURIComponent(dni))
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) {
+            alert(data.error);
+          } else {
+            // Construir la tarjeta HTML
+            let cont = document.getElementById('contenedor_tarjetas');
+            let div = document.createElement('div');
+            div.className = 'tarjeta-asistencia';
+            div.id = 'tarjeta_' + dni;
+
+            // puedes construir más elegante con backticks
+            div.innerHTML = `
           <table>
             <tr>
               <td style="text-align:center;">
@@ -441,18 +450,18 @@ document.getElementById('btn_agregar').addEventListener('click', function() {
           </table>
         `;
 
-        cont.appendChild(div);
-      }
-    })
-    .catch(error => {
-      console.error('Error en fetch:', error);
-      alert('Error al buscar trabajador');
+            cont.appendChild(div);
+          }
+        })
+        .catch(error => {
+          console.error('Error en fetch:', error);
+          alert('Error al buscar trabajador');
+        });
     });
-});
-</script>
+  </script>
 
-<?php
-if (isset($_POST['enviar'])) {
+  <?php
+  if (isset($_POST['enviar'])) {
     include("conexion_bd.php");
 
     // Paso 1: Validar y limpiar los datos generales
@@ -460,24 +469,24 @@ if (isset($_POST['enviar'])) {
     $fecha = mysqli_real_escape_string($conexion, strip_tags($_POST['fecha']));
     $producto = mysqli_real_escape_string($conexion, strip_tags($_POST['producto']));
 
-   $nombre_encargado = mysqli_real_escape_string($conexion, strip_tags($_POST['nombre_encargado']));
+    $nombre_encargado = mysqli_real_escape_string($conexion, strip_tags($_POST['nombre_encargado']));
 
-$sql_usuario = "SELECT id FROM usuarios WHERE nombre = '$nombre_encargado' LIMIT 1";
-$result_usuario = mysqli_query($conexion, $sql_usuario);
+    $sql_usuario = "SELECT id FROM usuarios WHERE nombre = '$nombre_encargado' LIMIT 1";
+    $result_usuario = mysqli_query($conexion, $sql_usuario);
 
-if ($fila = mysqli_fetch_assoc($result_usuario)) {
-    $id_encargado = $fila['id'];
-} else {
-    echo "<p style='color:red;text-align:center;'>Error: No se encontró un usuario con el nombre '$nombre_encargado'.</p>";
-    exit;
-}
+    if ($fila = mysqli_fetch_assoc($result_usuario)) {
+      $id_encargado = $fila['id'];
+    } else {
+      echo "<p style='color:red;text-align:center;'>Error: No se encontró un usuario con el nombre '$nombre_encargado'.</p>";
+      exit;
+    }
 
     // Paso 2: Insertar en listado_asistencia
     $sql_insert_listado = "INSERT INTO listados_asistencias (id_encargado, empresa, fecha, producto) 
                            VALUES ('$id_encargado', '$empresa', '$fecha', '$producto')";
     if (!mysqli_query($conexion, $sql_insert_listado)) {
-        echo "<p style='color:red;text-align:center;'>Error al guardar listado de asistencia.</p>";
-        exit;
+      echo "<p style='color:red;text-align:center;'>Error al guardar listado de asistencia.</p>";
+      exit;
     }
 
     // Obtener el ID recién creado
@@ -485,156 +494,163 @@ if ($fila = mysqli_fetch_assoc($result_usuario)) {
 
     // Paso 3: Recorrer trabajadores
     foreach ($_POST as $clave => $valor) {
-        if (strpos($clave, 'dni_') === 0) {
-            $dni = mysqli_real_escape_string($conexion, $valor);
-            $suffix = substr($clave, 4);
+      if (strpos($clave, 'dni_') === 0) {
+        $dni = mysqli_real_escape_string($conexion, $valor);
+        $suffix = substr($clave, 4);
 
-            $nombre = mysqli_real_escape_string($conexion, $_POST['nombre_' . $suffix]);
-            $asistencia = isset($_POST['asistencia_' . $suffix]) ? 'si' : 'no';
-            $bandejas = mysqli_real_escape_string($conexion, $_POST['bandejas_' . $suffix] ?? '');
-            $horas = mysqli_real_escape_string($conexion, $_POST['horas_' . $suffix] ?? '');
-            $observaciones = mysqli_real_escape_string($conexion, $_POST['observaciones_' . $suffix] ?? '');
+        $nombre = mysqli_real_escape_string($conexion, $_POST['nombre_' . $suffix]);
+        $asistencia = isset($_POST['asistencia_' . $suffix]) ? 'si' : 'no';
+        $bandejas = mysqli_real_escape_string($conexion, $_POST['bandejas_' . $suffix] ?? '');
+        $horas = mysqli_real_escape_string($conexion, $_POST['horas_' . $suffix] ?? '');
+        $observaciones = mysqli_real_escape_string($conexion, $_POST['observaciones_' . $suffix] ?? '');
 
-            // Buscar el id_trabajador según el DNI
-            $query_trabajador = "SELECT id FROM trabajadores WHERE dni = '$dni' LIMIT 1";
-            $res_trabajador = mysqli_query($conexion, $query_trabajador);
+        // Buscar el id_trabajador según el DNI
+        $query_trabajador = "SELECT id FROM trabajadores WHERE dni = '$dni' LIMIT 1";
+        $res_trabajador = mysqli_query($conexion, $query_trabajador);
 
-            if ($row = mysqli_fetch_assoc($res_trabajador)) {
-                $id_trabajador = $row['id'];
+        if ($row = mysqli_fetch_assoc($res_trabajador)) {
+          $id_trabajador = $row['id'];
 
-                // Insertar en asistencias
-                $sql_asistencia = "INSERT INTO asistencias 
+          // Insertar en asistencias
+          $sql_asistencia = "INSERT INTO asistencias 
                     (id_listado, empresa, fecha, producto, asistencia, id_trabajador, dni, bandeja, horas, observaciones)
                     VALUES
                     ('$id_listado', '$empresa', '$fecha', '$producto', '$asistencia', '$id_trabajador', '$dni', '$bandejas', '$horas', '$observaciones')";
 
-                mysqli_query($conexion, $sql_asistencia);
-            } else {
-                echo "<p style='color:red;text-align:center;'>No se encontró trabajador con DNI $dni. No se guardó su asistencia.</p>";
-            }
+          mysqli_query($conexion, $sql_asistencia);
+        } else {
+          echo "<p style='color:red;text-align:center;'>No se encontró trabajador con DNI $dni. No se guardó su asistencia.</p>";
         }
+      }
     }
 
     mysqli_close($conexion);
 
     echo "<p style='margin: 3rem auto; color: green; font-weight: bold; text-align: center;'>Asistencias guardadas correctamente</p>";
-}
-?>
-
-<script>
-const inputDni = document.getElementById('buscar_dni');
-const contenedorSugerencias = document.getElementById('sugerencias');
-
-inputDni.addEventListener('input', function () {
-  const texto = this.value.trim();
-
-  if (texto.length < 2) {
-    contenedorSugerencias.innerHTML = '';
-    return;
   }
+  ?>
 
-  fetch('buscar_sugerencias.php?term=' + encodeURIComponent(texto))
-    .then(res => res.json())
-    .then(data => {
-      contenedorSugerencias.innerHTML = '';
+  <script>
+    const inputDni = document.getElementById('buscar_dni');
+    const contenedorSugerencias = document.getElementById('sugerencias');
 
-      if (data.length === 0) {
-        contenedorSugerencias.innerHTML = '<div style="padding: 0.5rem; color: #888;">No se encontraron coincidencias</div>';
+    inputDni.addEventListener('input', function() {
+      const texto = this.value.trim();
+
+      if (texto.length < 2) {
+        contenedorSugerencias.innerHTML = '';
         return;
       }
 
-      // Usamos "item" como nombre del elemento para mayor claridad
-      data.forEach(item => {
-        const opcion = document.createElement('div');
-        opcion.textContent = `${item.dni} - ${item.nombre}`;
-        opcion.style.padding = '0.5rem';
-        opcion.style.cursor = 'pointer';
-        opcion.style.borderBottom = '1px solid #ccc';
-
-        opcion.addEventListener('click', function () {
-          inputDni.value = item.dni;
+      fetch('buscar_sugerencias.php?term=' + encodeURIComponent(texto))
+        .then(res => res.json())
+        .then(data => {
           contenedorSugerencias.innerHTML = '';
+
+          if (data.length === 0) {
+            contenedorSugerencias.innerHTML = '<div style="padding: 0.5rem; color: #888;">No se encontraron coincidencias</div>';
+            return;
+          }
+
+          // Usamos "item" como nombre del elemento para mayor claridad
+          data.forEach(item => {
+            const opcion = document.createElement('div');
+            opcion.textContent = `${item.dni} - ${item.nombre}`;
+            opcion.style.padding = '0.5rem';
+            opcion.style.cursor = 'pointer';
+            opcion.style.borderBottom = '1px solid #ccc';
+
+            opcion.addEventListener('click', function() {
+              inputDni.value = item.dni;
+              contenedorSugerencias.innerHTML = '';
+            });
+
+            contenedorSugerencias.appendChild(opcion);
+          });
+        })
+        .catch(err => {
+          console.error('Error en sugerencias:', err);
         });
-
-        contenedorSugerencias.appendChild(opcion);
-      });
-    })
-    .catch(err => {
-      console.error('Error en sugerencias:', err);
     });
-});
 
-// Oculta sugerencias si haces clic fuera
-document.addEventListener('click', function (e) {
-  if (!contenedorSugerencias.contains(e.target) && e.target !== inputDni) {
-    contenedorSugerencias.innerHTML = '';
-  }
-});
-</script>
+    // Oculta sugerencias si haces clic fuera
+    document.addEventListener('click', function(e) {
+      if (!contenedorSugerencias.contains(e.target) && e.target !== inputDni) {
+        contenedorSugerencias.innerHTML = '';
+      }
+    });
+  </script>
 
-<script>
-const inputEncargado = document.getElementById('nombre_encargado');
-const contenedorEncargado = document.getElementById('sugerencias_encargado');
+  <script>
+    const inputEncargado = document.getElementById('nombre_encargado');
+    const contenedorEncargado = document.getElementById('sugerencias_encargado');
 
-inputEncargado.addEventListener('input', function () {
-  const texto = this.value.trim();
+    inputEncargado.addEventListener('input', function() {
+      const texto = this.value.trim();
 
-  if (texto.length < 2) {
-    contenedorEncargado.innerHTML = '';
-    return;
-  }
-
-  fetch('buscar_encargado.php?term=' + encodeURIComponent(texto))
-    .then(res => res.json())
-    .then(data => {
-      contenedorEncargado.innerHTML = '';
-
-      if (data.length === 0) {
-        contenedorEncargado.innerHTML = '<div style="padding: 0.5rem; color: #888;">No se encontraron coincidencias</div>';
+      if (texto.length < 2) {
+        contenedorEncargado.innerHTML = '';
         return;
       }
 
-      data.forEach(nombre => {
-        const opcion = document.createElement('div');
-        opcion.textContent = nombre;
-
-        opcion.addEventListener('click', function () {
-          inputEncargado.value = nombre;
+      fetch('buscar_encargado.php?term=' + encodeURIComponent(texto))
+        .then(res => res.json())
+        .then(data => {
           contenedorEncargado.innerHTML = '';
+
+          if (data.length === 0) {
+            contenedorEncargado.innerHTML = '<div style="padding: 0.5rem; color: #888;">No se encontraron coincidencias</div>';
+            return;
+          }
+
+          data.forEach(nombre => {
+            const opcion = document.createElement('div');
+            opcion.textContent = nombre;
+
+            opcion.addEventListener('click', function() {
+              inputEncargado.value = nombre;
+              contenedorEncargado.innerHTML = '';
+            });
+
+            contenedorEncargado.appendChild(opcion);
+          });
+        })
+        .catch(err => {
+          console.error('Error al buscar encargado:', err);
         });
-
-        contenedorEncargado.appendChild(opcion);
-      });
-    })
-    .catch(err => {
-      console.error('Error al buscar encargado:', err);
     });
+
+    document.addEventListener('click', function(e) {
+      if (!contenedorEncargado.contains(e.target) && e.target !== inputEncargado) {
+        contenedorEncargado.innerHTML = '';
+      }
+    });
+  </script>
+  <script>
+    function toggleMenu() {
+      const menu = document.getElementById('menuDropdown');
+      menu.classList.toggle('show');
+    }
+
+    // Cierra el menú si haces clic fuera
+    document.addEventListener('click', function(e) {
+      const menu = document.getElementById('menuDropdown');
+      const toggle = document.querySelector('.menu-toggle');
+
+      if (!menu.contains(e.target) && e.target !== toggle) {
+        menu.classList.remove('show');
+      }
+    });
+    // Cierra el menú al hacer clic en un enlace del menú
+document.querySelectorAll('.menu-dropdown a').forEach(enlace => {
+  enlace.addEventListener('click', () => {
+    document.getElementById('menuDropdown').classList.remove('show');
+  });
 });
 
-document.addEventListener('click', function (e) {
-  if (!contenedorEncargado.contains(e.target) && e.target !== inputEncargado) {
-    contenedorEncargado.innerHTML = '';
-  }
-});
-</script>
-<script>
-function toggleMenu() {
-  const menu = document.getElementById('menuDropdown');
-  menu.classList.toggle('show');
-}
-
-// Cierra el menú si haces clic fuera
-document.addEventListener('click', function(e) {
-  const menu = document.getElementById('menuDropdown');
-  const toggle = document.querySelector('.menu-toggle');
-
-  if (!menu.contains(e.target) && e.target !== toggle) {
-    menu.classList.remove('show');
-  }
-});
-</script>
+  </script>
 
 
 </body>
-</html>
 
+</html>
