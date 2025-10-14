@@ -312,6 +312,85 @@ include("validar_sesion.php");
     #btn_exportar_pdf:hover:enabled {
       background-color: #c84323;
     }
+    /* Botón + para ver asistencias */
+.btn-ver-asistencias {
+  background-color: #ff671d;
+  border: none;
+  color: white;
+  font-weight: bold;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  margin-left: 0.5rem;
+  position: relative;
+}
+
+.btn-ver-asistencias::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: -35px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #333;
+  color: #fff;
+  font-size: 0.8rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 1;
+}
+
+.btn-ver-asistencias:hover::after {
+  opacity: 1;
+}
+
+/* Botón volver */
+#btn_volver_listados {
+  background-color: #555;
+  color: white;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 4px;
+  margin-top: 1rem;
+  cursor: pointer;
+}
+
+/* Scroll vertical en observaciones */
+td.observaciones {
+  max-height: 80px;
+  overflow-y: auto;
+}#btn_toggle_asistencias {
+  background-color: #28a745; /* verde */
+  color: white;
+  font-size: 1.5rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  margin: 1rem auto;
+  display: block;
+  transition: background-color 0.3s ease;
+}
+
+#btn_toggle_asistencias.ver {
+  background-color: #28a745; /* verde */
+}
+
+#btn_toggle_asistencias.volver {
+  background-color: #6c757d; /* gris */
+}
+
+#btn_toggle_asistencias:hover {
+  opacity: 0.85;
+}
+
+
   </style>
 
 </head>
@@ -344,11 +423,43 @@ include("validar_sesion.php");
       <tbody></tbody>
     </table>
 
+     <!-- Tabla de asistencias (oculta inicialmente) -->
+<div id="contenedor-asistencias" style="display:none;">
+  <h2 class="titulo-listado">Asistencias del listado</h2>
+  <div style="overflow-x: auto;">
+    <table id="tabla_asistencias">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Trabajador</th>
+          <th>DNI</th>
+          <th>Asistencia</th>
+          <th>Empresa</th>
+          <th>Fecha</th>
+          <th>Producto</th>
+          <th>Bandeja</th>
+          <th>Horas</th>
+          <th style="min-width:200px;">Observaciones</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+    
+    <!-- Botón fijo + para ver asistencias -->
+    <button id="btn_toggle_asistencias" style="display: none;">+</button>
+
+
+
     <form id="form_exportar" method="get" action="funcion_exportar_excel.php" target="_blank">
       <input type="hidden" name="id_listado" id="id_listado" />
       <button type="submit" id="btn_exportar" disabled>Exportar listado seleccionado a Excel</button>
       <button type="button" id="btn_exportar_pdf" disabled>Exportar a PDF</button>
     </form>
+
+   
+
 
   </div>
 
@@ -357,78 +468,175 @@ include("validar_sesion.php");
 
 <script>
   const fechaInput = document.getElementById('fecha_buscar');
-  const tabla = document.getElementById('tabla_listados');
-  const tbody = tabla.querySelector('tbody');
-  const btnExportar = document.getElementById('btn_exportar');
-  const btnExportarPDF = document.getElementById('btn_exportar_pdf');
-  const inputIdListado = document.getElementById('id_listado');
-  let seleccionado = null;
+const tabla = document.getElementById('tabla_listados');
+const tbody = tabla.querySelector('tbody');
+const btnExportar = document.getElementById('btn_exportar');
+const btnExportarPDF = document.getElementById('btn_exportar_pdf');
+const inputIdListado = document.getElementById('id_listado');
+const btnToggle = document.getElementById('btn_toggle_asistencias');
+const contenedorAsistencias = document.getElementById('contenedor-asistencias');
+const tablaListados = document.getElementById('tabla_listados');
+const tbodyAsistencias = document.querySelector('#tabla_asistencias tbody');
 
-  fechaInput.addEventListener('change', () => {
-    const fecha = fechaInput.value;
-    if (!fecha) {
-      tabla.style.display = 'none';
+let seleccionado = null;
+
+// Al cambiar la fecha
+fechaInput.addEventListener('change', () => {
+  const fecha = fechaInput.value;
+
+  // Cerrar asistencias y ocultar botón al cambiar fecha
+  contenedorAsistencias.style.display = 'none';
+  tablaListados.style.display = 'none';
+  btnToggle.style.display = 'none';
+  btnToggle.textContent = '+';
+  btnToggle.setAttribute('data-mode', 'ver');
+  btnToggle.classList.remove('volver');
+  btnToggle.classList.add('ver');
+  btnToggle.removeAttribute('data-id');
+  btnToggle.setAttribute('title', '');
+
+  if (!fecha) {
+    tabla.style.display = 'none';
+    tbody.innerHTML = '';
+    btnExportar.disabled = true;
+    btnExportarPDF.disabled = true;
+    inputIdListado.value = '';
+    return;
+  }
+
+  fetch('buscar_listados_por_fecha.php?fecha=' + fecha)
+    .then(res => res.json())
+    .then(data => {
       tbody.innerHTML = '';
-      btnExportar.disabled = true;
-      inputIdListado.value = '';
-      return;
-    }
 
-    fetch('buscar_listados_por_fecha.php?fecha=' + fecha)
-      .then(res => res.json())
-      .then(data => {
-        tbody.innerHTML = '';
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No se encontraron listados para esta fecha.</td></tr>';
+        tabla.style.display = 'table';
+        btnExportar.disabled = true;
+        btnExportarPDF.disabled = true;
+        inputIdListado.value = '';
+        return;
+      }
 
-        if (data.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No se encontraron listados para esta fecha.</td></tr>';
-          tabla.style.display = 'table';
-          btnExportar.disabled = true;
-          inputIdListado.value = '';
-          return;
-        }
-
-        data.forEach(listado => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
+      data.forEach(listado => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
           <td>${listado.id}</td>
           <td>${listado.empresa}</td>
           <td>${listado.producto}</td>
           <td>${listado.fecha}</td>
         `;
 
-          tr.addEventListener('click', () => {
-            if (seleccionado) {
-              seleccionado.classList.remove('selected');
-            }
-            tr.classList.add('selected');
-            seleccionado = tr;
-            inputIdListado.value = listado.id;
-            btnExportar.disabled = false;
-            btnExportarPDF.disabled = false;
+        tr.addEventListener('click', () => {
+          if (seleccionado) {
+            seleccionado.classList.remove('selected');
+          }
 
-          });
+          tr.classList.add('selected');
+          seleccionado = tr;
+          inputIdListado.value = listado.id;
+          btnExportar.disabled = false;
+          btnExportarPDF.disabled = false;
 
-          tbody.appendChild(tr);
+          // Mostrar botón + y configurarlo para el listado seleccionado
+          btnToggle.style.display = 'inline-block';
+          btnToggle.setAttribute('data-id', listado.id);
+          btnToggle.setAttribute('data-mode', 'ver');
+          btnToggle.textContent = '+';
+          btnToggle.classList.remove('volver');
+          btnToggle.classList.add('ver');
+          btnToggle.setAttribute('title', 'Ver asistencias');
         });
 
-        tabla.style.display = 'table';
-      })
-      .catch(err => {
-        console.error('Error al buscar listados:', err);
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Error al cargar los listados.</td></tr>';
-        tabla.style.display = 'table';
-        btnExportar.disabled = true;
-        inputIdListado.value = '';
+        tbody.appendChild(tr);
       });
-  });
+
+      tabla.style.display = 'table';
+    })
+    .catch(err => {
+      console.error('Error al buscar listados:', err);
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Error al cargar los listados.</td></tr>';
+      tabla.style.display = 'table';
+      btnExportar.disabled = true;
+      btnExportarPDF.disabled = true;
+      inputIdListado.value = '';
+    });
+});
+
+// Exportar PDF
+btnExportarPDF.addEventListener('click', () => {
+  const idListado = inputIdListado.value;
+  if (!idListado) return alert('Selecciona un listado primero.');
+
+  window.open('funcion_exportar_pdf.php?id_listado=' + idListado, '_blank');
+});
+
+// Mostrar asistencias
+function mostrarAsistencias(idListado) {
+  fetch('buscar_asistencias_por_listado.php?id_listado=' + idListado)
+    .then(res => res.json())
+    .then(data => {
+      tbodyAsistencias.innerHTML = '';
+
+      if (data.length === 0) {
+        tbodyAsistencias.innerHTML = '<tr><td colspan="10" style="text-align:center;">No se encontraron asistencias.</td></tr>';
+      } else {
+        data.forEach(asistencia => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${asistencia.id}</td>
+            <td>${asistencia.nombre} ${asistencia.apellidos}</td>
+            <td>${asistencia.dni}</td>
+            <td>${asistencia.asistencia}</td>
+            <td>${asistencia.empresa}</td>
+            <td>${asistencia.fecha}</td>
+            <td>${asistencia.producto}</td>
+            <td>${asistencia.Bandeja}</td>
+            <td>${asistencia.Horas}</td>
+            <td class="observaciones">${asistencia.Observaciones}</td>
+          `;
+          tbodyAsistencias.appendChild(tr);
+        });
+      }
+
+      tablaListados.style.display = 'none';
+      contenedorAsistencias.style.display = 'block';
+    })
+    .catch(err => {
+      console.error('Error al cargar asistencias:', err);
+      tbodyAsistencias.innerHTML = '<tr><td colspan="10">Error al cargar asistencias.</td></tr>';
+    });
+}
+
+// Botón toggle para mostrar/ocultar asistencias
+btnToggle.addEventListener('click', () => {
+  const modo = btnToggle.getAttribute('data-mode');
+  const idListado = btnToggle.getAttribute('data-id');
+
+  if (modo === 'ver') {
+    if (!idListado) {
+      alert('No se ha seleccionado ningún listado.');
+      return;
+    }
+
+    mostrarAsistencias(idListado);
+    btnToggle.textContent = '−';
+    btnToggle.classList.remove('ver');
+    btnToggle.classList.add('volver');
+    btnToggle.setAttribute('data-mode', 'volver');
+    btnToggle.setAttribute('title', 'Ver listados');
+  } else {
+    contenedorAsistencias.style.display = 'none';
+    tablaListados.style.display = 'table';
+    btnToggle.textContent = '+';
+    btnToggle.classList.remove('volver');
+    btnToggle.classList.add('ver');
+    btnToggle.setAttribute('data-mode', 'ver');
+    btnToggle.setAttribute('title', 'Ver asistencias');
+  }
+});
 
 
-  btnExportarPDF.addEventListener('click', () => {
-    const idListado = inputIdListado.value;
-    if (!idListado) return alert('Selecciona un listado primero.');
-
-    window.open('funcion_exportar_pdf.php?id_listado=' + idListado, '_blank');
-  });
 </script>
 
 </body>
