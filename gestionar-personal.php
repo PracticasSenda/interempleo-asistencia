@@ -14,10 +14,25 @@ $apellidos = $_SESSION['apellidos'] ?? '';
 $nombre_completo = trim("$nombre $apellidos");
 
 // Parámetros UI
-$tipo   = $_GET['tipo']   ?? 'trabajadores';        // 'trabajadores' | 'encargados'
-$vista  = $_GET['vista']  ?? 'lista';               // 'lista' | 'alta'
-$estado = $_GET['estado'] ?? 'activo';              // valor por defecto ahora es 'activo'
-$q      = trim($_GET['q'] ?? '');                   // búsqueda servidor: nombre/apellidos/dni
+$tipo   = $_GET['tipo']   ?? 'trabajadores';  // 'trabajadores' | 'encargados'
+$estado = $_GET['estado'] ?? 'activo';        // valor por defecto ahora es 'activo'
+$q      = trim($_GET['q'] ?? '');             // búsqueda: nombre/apellidos/dni
+
+// Si no se especifica vista en la URL, redirige con vista=lista por defecto
+if (!isset($_GET['vista'])) {
+    header("Location: gestionar-personal.php?tipo=" . urlencode($tipo) . "&vista=lista&estado=" . urlencode($estado) . "&q=" . urlencode($q));
+    exit();
+}
+
+// Normalizar valores posibles de vista
+$vista_param = trim($_GET['vista']);
+if ($vista_param === 'ver_listado') {
+    $vista = 'lista'; // unificar nomenclatura antigua
+} elseif ($vista_param === 'dar_alta') {
+    $vista = 'alta';
+} else {
+    $vista = $vista_param;
+}
 
 // Encargado no puede ver encargados
 if ($rol === 'encargado' && $tipo === 'encargados') {
@@ -332,6 +347,13 @@ $res = $stmt->get_result();
             color: var(--naranja);
         }
 
+        .menu-dropdown a.activo {
+            background-color: #ffe8dc;
+            color: var(--naranja);
+            font-weight: bold;
+        }
+
+
         .menu-dropdown a:last-child {
             border-bottom: none;
         }
@@ -354,9 +376,25 @@ $res = $stmt->get_result();
    ========================================================= */
         .actions {
             display: flex;
-            gap: 10px;
-            margin: 8px 0 12px;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
             flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .actions .btn {
+            flex: 0 0 auto;
+            /* evita que se estiren */
+            padding: 10px 22px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            text-align: center;
+            min-width: 130px;
+            max-width: 180px;
+            white-space: nowrap;
+            /* evita saltos de línea */
         }
 
         .btn {
@@ -379,7 +417,9 @@ $res = $stmt->get_result();
             color: #fff;
             border-color: var(--naranja);
             box-shadow: 0 3px 10px rgba(255, 103, 29, 0.3);
+            transform: scale(1.05);
         }
+
 
         .btn-primary:hover,
         .btn.active:hover {
@@ -540,7 +580,12 @@ $res = $stmt->get_result();
             }
 
             .actions {
-                flex-direction: column;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 12px;
+                flex-wrap: wrap;
+                margin-bottom: 15px;
             }
 
             table {
@@ -702,18 +747,8 @@ $res = $stmt->get_result();
         <div class="contenedor-barra">
             <div class="lado-izquierdo">
                 <button class="menu-toggle" onclick="toggleMenu()">☰</button>
-                <p>
-                    <span>Inter</span>empleo -
-                    <?php
-                    if ($tipo === 'trabajadores') {
-                        echo 'Gestionar Trabajadores';
-                    } elseif ($tipo === 'encargados') {
-                        echo 'Gestionar Encargados';
-                    } else {
-                        echo 'Gestionar Personal';
-                    }
-                    ?>
-                </p>
+                <p><span>Inter</span>empleo</p>
+
             </div>
             <div class="bienvenida">
                 Bienvenido, <?= htmlspecialchars($nombre_completo) ?>
@@ -721,13 +756,31 @@ $res = $stmt->get_result();
         </div>
 
         <div class="menu-dropdown" id="menuDropdown">
-            <a href="gestionar-personal.php?tipo=trabajadores&vista=lista">Gestión de trabajadores</a>
+            <a href="gestionar-personal.php?tipo=trabajadores&vista=lista"
+                class="<?= ($tipo === 'trabajadores') ? 'activo' : '' ?>">
+                Gestión de trabajadores
+            </a>
+
             <?php if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'administrador'): ?>
-                <a href="gestionar-personal.php?tipo=encargados&vista=lista">Gestión de encargados</a>
+                <a href="gestionar-personal.php?tipo=encargados&vista=lista"
+                    class="<?= ($tipo === 'encargados') ? 'activo' : '' ?>">
+                    Gestión de encargados
+                </a>
             <?php endif; ?>
-            <a href="exportar_excel_pdf.php">Exportar Excel/PDF</a>
+
+            <a href="asistencia_responsive.php"
+                class="<?= (basename($_SERVER['PHP_SELF']) === 'asistencia_responsive.php') ? 'activo' : '' ?>">
+                Parte de asistencias
+            </a>
+
+            <a href="exportar_excel_pdf.php"
+                class="<?= (basename($_SERVER['PHP_SELF']) === 'exportar_excel_pdf.php') ? 'activo' : '' ?>">
+                Exportar Excel/PDF
+            </a>
+
             <a href="cerrar_sesion.php">Cerrar sesión</a>
         </div>
+
     </div>
 
 
