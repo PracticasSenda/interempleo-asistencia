@@ -16,11 +16,36 @@ if (isset($_POST['enviar'])) {
   $password = mysqli_real_escape_string($conexion, strip_tags($_POST['password']));
   $sesion = isset($_POST["sesion"]) ? "si" : "no";
     if (validar_usuario($conexion, $dni, $password)) {
+      
+    // Nueva versión: obtener también nombre y apellidos del usuario
+    $consulta = "SELECT id, nombre, apellidos, rol FROM usuarios WHERE dni = ?";
+    $stmt = $conexion->prepare($consulta);
+    $stmt->bind_param("s", $dni);
+    $stmt->execute();
+    $resultado = $stmt->get_result();
+
+    if ($fila = $resultado->fetch_assoc()) {
+        $_SESSION['id'] = $fila['id'];
+        $_SESSION['dni'] = $dni;
+        $_SESSION['nombre'] = $fila['nombre'];
+        $_SESSION['apellidos'] = $fila['apellidos'];
+        $_SESSION['rol'] = $fila['rol'];
+    } else {
+        $_SESSION['rol'] = '';
+    }
+
+    $stmt->close();
+
+
+
+   /*
     $_SESSION['nombre'] = $dni;
 
     // Obtener el rol del usuario
     $consulta_rol = "SELECT rol FROM usuarios WHERE dni = '$dni'";
     $resultado_rol = mysqli_query($conexion, $consulta_rol);
+
+ 
     
     if ($resultado_rol && mysqli_num_rows($resultado_rol) === 1) {
         $fila_rol = mysqli_fetch_row($resultado_rol); // fetch_row devuelve array numérico
@@ -28,6 +53,8 @@ if (isset($_POST['enviar'])) {
     } else {
         $_SESSION['rol'] = '';
     }
+
+       */
 
     // Guardamos si el usuario quiere mantener la sesión o no
     $_SESSION['sesion'] = $sesion; // "si" o "no"
