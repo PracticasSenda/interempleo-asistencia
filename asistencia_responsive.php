@@ -69,35 +69,37 @@ include("validar_sesion.php");
     }
 
     .menu-dropdown {
-      display: none;
-      flex-direction: column;
-      position: absolute;
-      top: 70px;
-      /* ajusta según el alto de la barra */
-      left: 1rem;
-      background-color: white;
-      border: 1px solid #ccc;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-      z-index: 9999;
-      padding: 1rem;
-      border-radius: 6px;
-      min-width: 200px;
-    }
+  display: none;
+  flex-direction: column;
+  position: absolute;
+  top: 70px;
+  left: 1rem;
+  background-color: white;
+  border: 1px solid #ccc;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  z-index: 9999;
+  padding: 1.5rem;          /* Más espacio interno */
+  border-radius: 8px;
+  min-width: 260px;         /* Más ancho */
+  font-size: 1.45rem;        /* Letras más grandes */
+}
 
-    .menu-dropdown a {
-      padding: 0.5rem 0;
-      color: var(--color-texto);
-      text-decoration: none;
-      border-bottom: 1px solid #eee;
-    }
+.menu-dropdown a {
+  padding: 0.8rem 0;        /* Más espacio entre opciones */
+  color: var(--color-texto);
+  text-decoration: none;
+  border-bottom: 1px solid #eee;
+  font-size: 1.45rem;
+}
 
-    .menu-dropdown a:last-child {
-      border-bottom: none;
-    }
+.menu-dropdown a:last-child {
+  border-bottom: none;
+}
 
-    .menu-dropdown a:hover {
-      color: var(--color-principal);
-    }
+.menu-dropdown a:hover {
+  color: var(--color-principal);
+}
+
 
     /* Mostrar el menú cuando se activa */
     .menu-dropdown.show {
