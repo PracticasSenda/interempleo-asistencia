@@ -80,9 +80,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['
 
 // Dar de alta (POST) + reactivar si corresponde
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion']) && $_POST['accion'] === 'alta') {
-    $n = trim($_POST['nombre'] ?? '');
-    $a = trim($_POST['apellidos'] ?? '');
-    $d = trim($_POST['dni'] ?? '');
+    $n = strtoupper(trim($_POST['nombre'] ?? ''));
+    $a = strtoupper(trim($_POST['apellidos'] ?? ''));
+    $d = strtoupper(trim($_POST['dni'] ?? ''));
+
     $c = ($tipo === 'encargados') ? trim($_POST['contraseña'] ?? '') : '';
 
     if ($n === '' || $a === '' || $d === '' || ($tipo === 'encargados' && $c === '')) {
@@ -182,8 +183,17 @@ if ($q !== '') {
     $types  = 'sss';
 }
 
-$sql = "SELECT $cols $base ORDER BY id DESC";
+// Orden personalizado
+$orden = $_GET['orden'] ?? 'recientes';
+
+if ($orden === 'alfabetico') {
+    $sql = "SELECT $cols $base ORDER BY nombre ASC, apellidos ASC";
+} else {
+    $sql = "SELECT $cols $base ORDER BY id DESC";
+}
+
 $stmt = $conexion->prepare($sql);
+
 if (!empty($params)) {
     $stmt->bind_param($types, ...$params);
 }
@@ -634,6 +644,21 @@ $res = $stmt->get_result();
         #modalAlta .btn-confirmar:hover {
             background: #33c754;
         }
+
+        h2.titulo-seccion {
+            text-align: center;
+            color: var(--naranja);
+            margin: 1rem 0;
+            font-size: 1.6rem;
+        }
+
+        .filters label {
+            white-space: nowrap;
+        }
+
+        .filters select {
+            min-width: 160px;
+        }
     </style>
 
 </head>
@@ -709,10 +734,23 @@ $res = $stmt->get_result();
 
     <div class="wrap">
 
+        <h2 class="titulo-seccion">
+            <?php
+            if ($tipo === 'trabajadores') {
+                echo 'Gestión de Trabajadores';
+            } elseif ($tipo === 'encargados') {
+                echo 'Gestión de Encargados';
+            } else {
+                echo 'Gestión de Personal';
+            }
+            ?>
+        </h2>
+
         <div class="actions">
             <a class="btn <?= $vista === 'lista' ? 'btn-primary active' : 'btn-secondary' ?>" href="?tipo=<?= h($tipo) ?>&vista=lista&estado=<?= h($estado) ?>&q=<?= h($q) ?>">Ver Listado</a>
             <a class="btn <?= $vista === 'alta' ? 'btn-primary active' : 'btn-secondary' ?>" href="?tipo=<?= h($tipo) ?>&vista=alta&estado=<?= h($estado) ?>&q=<?= h($q) ?>">Dar de Alta</a>
         </div>
+
 
 
 
@@ -724,20 +762,22 @@ $res = $stmt->get_result();
             <?php if ($vista === 'alta'): ?>
                 <form class="form-alta" method="POST">
                     <input type="hidden" name="accion" value="alta">
-                    <input type="text" name="nombre" placeholder="Nombre" required>
-                    <input type="text" name="apellidos" placeholder="Apellidos" required>
-                    <input type="text" name="dni" placeholder="DNI" required>
+                    <input type="text" name="nombre" placeholder="Nombre" required oninput="this.value = this.value.toUpperCase()">
+                    <input type="text" name="apellidos" placeholder="Apellidos" required oninput="this.value = this.value.toUpperCase()">
+                    <input type="text" name="dni" placeholder="DNI" required oninput="this.value = this.value.toUpperCase()">
                     <?php if ($tipo === 'encargados' && $rol === 'administrador'): ?>
                         <input type="password" name="contraseña" placeholder="Contraseña" required>
                     <?php endif; ?>
                     <button class="btn submit" type="submit">Guardar</button>
                 </form>
+
             <?php else: ?>
                 <!-- Filtros solo en "Ver Listado" -->
-                <form class="filters" method="GET" onsubmit="return false;">
+                <form class="filters" method="GET">
                     <input type="hidden" name="tipo" value="<?= h($tipo) ?>">
                     <input type="hidden" name="vista" value="lista">
 
+                    <!-- Filtro por estado -->
                     <label>Estado:
                         <select name="estado" onchange="this.form.submit()">
                             <option value="todos" <?= $estado === 'todos' ? 'selected' : '' ?>>Todos</option>
@@ -746,18 +786,27 @@ $res = $stmt->get_result();
                         </select>
                     </label>
 
-                    <div style="position: relative; flex:1;">
+                    <!-- Buscador reducido -->
+                    <div style="position: relative; flex:0.6;">
                         <input
                             type="text"
                             name="q"
                             id="buscador"
                             value="<?= h($q) ?>"
-                            placeholder="Buscador por DNI, Nombre o Apellido"
+                            placeholder="Buscar por DNI o Nombre"
                             autocomplete="off"
                             style="width:100%;">
                     </div>
 
+                    <!-- Ordenar por -->
+                    <label>Ordenar:
+                        <select name="orden" onchange="this.form.submit()">
+                            <option value="recientes" <?= ($_GET['orden'] ?? '') === 'recientes' ? 'selected' : '' ?>>Más recientes</option>
+                            <option value="alfabetico" <?= ($_GET['orden'] ?? '') === 'alfabetico' ? 'selected' : '' ?>>A-Z (alfabético)</option>
+                        </select>
+                    </label>
                 </form>
+
 
 
                 <table>
