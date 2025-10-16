@@ -355,9 +355,10 @@ include("validar_sesion.php");
   padding: 0.6rem 1.2rem;
   border: none;
   border-radius: 4px;
-  margin-top: 1rem;
+  margin-bottom: 1rem;
   cursor: pointer;
 }
+
 
 /* Scroll vertical en observaciones */
 td.observaciones {
@@ -400,13 +401,10 @@ td.observaciones {
   line-height: 1;
 }
 
-.btn-opciones:hover {
-  color: #e65c17;
-}
 .menu-opciones {
   position: absolute;
   top: 100%;
-  right: 0;
+  left:0;
   background-color: white;
   border: 1px solid var(--color-borde);
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
@@ -414,6 +412,7 @@ td.observaciones {
   z-index: 1000; /* subir bastante para que quede encima */
   padding: 0.3rem 0;
   min-width: 160px;
+  max-width:250px;
 }
 
 .menu-item {
@@ -443,6 +442,7 @@ td {
   padding: 0.3rem 0;
   min-width: 160px;
   display: none;
+  max-width:250px;
 }
 .menu-toggle {
   font-size: 1.8rem;
@@ -494,6 +494,25 @@ td {
   margin-left: 0;
   padding-left: 0;
 }
+#header-exportar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+#form_exportar {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0;
+}
+.oculto {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+
 
 
 
@@ -505,6 +524,7 @@ td {
 </head>
 
 <body>
+
 
   <div class="barra-superior">
     <!-- Botón de menú + título central -->
@@ -533,7 +553,15 @@ td {
       <input type="date" id="fecha_buscar" name="fecha" required />
     </form>
 
-    <h2 class="titulo-listado">Selecciona un listado</h2>
+   <div id="header-exportar" style="display: flex; align-items: center; gap: 1rem;">
+  <h2 class="titulo-listado">Selecciona un listado</h2>
+  <form id="form_exportar" method="get" action="funcion_exportar_excel.php" target="_blank" style="margin: 0;">
+    <input type="hidden" name="id_listado" id="id_listado" />
+    <button type="submit" id="btn_exportar" disabled>Exportar a Excel</button>
+    <button type="button" id="btn_exportar_pdf" disabled>Exportar a PDF</button>
+  </form>
+</div>
+
 
     <table id="tabla_listados" style="display:none;">
       <thead>
@@ -550,6 +578,7 @@ td {
 
      <!-- Tabla de asistencias (oculta inicialmente) -->
 <div id="contenedor-asistencias" style="display:none;">
+  <button id="btn_volver_listados" style="display: none;">← Volver a listados</button>
   <h2 class="titulo-listado">Asistencias del listado</h2>
   <div style="overflow-x: auto;">
     <table id="tabla_asistencias">
@@ -572,16 +601,10 @@ td {
   </div>
 </div>
     
-    <!-- Botón fijo + para ver asistencias -->
-    <button id="btn_toggle_asistencias" style="display: none;">+</button>
+   
+    
 
 
-
-    <form id="form_exportar" method="get" action="funcion_exportar_excel.php" target="_blank">
-      <input type="hidden" name="id_listado" id="id_listado" />
-      <button type="submit" id="btn_exportar" disabled>Exportar listado seleccionado a Excel</button>
-      <button type="button" id="btn_exportar_pdf" disabled>Exportar a PDF</button>
-    </form>
 
    
 
@@ -598,10 +621,12 @@ const tbody = tabla.querySelector('tbody');
 const btnExportar = document.getElementById('btn_exportar');
 const btnExportarPDF = document.getElementById('btn_exportar_pdf');
 const inputIdListado = document.getElementById('id_listado');
-const btnToggle = document.getElementById('btn_toggle_asistencias');
 const contenedorAsistencias = document.getElementById('contenedor-asistencias');
 const tablaListados = document.getElementById('tabla_listados');
 const tbodyAsistencias = document.querySelector('#tabla_asistencias tbody');
+const tituloListado = document.querySelector('.titulo-listado');
+const formExportar = document.getElementById('form_exportar');
+
 
 let seleccionado = null;
 
@@ -612,13 +637,7 @@ fechaInput.addEventListener('change', () => {
   // Resetear vista
   contenedorAsistencias.style.display = 'none';
   tablaListados.style.display = 'none';
-  btnToggle.style.display = 'none';
-  btnToggle.textContent = '+';
-  btnToggle.setAttribute('data-mode', 'ver');
-  btnToggle.classList.remove('volver');
-  btnToggle.classList.add('ver');
-  btnToggle.removeAttribute('data-id');
-  btnToggle.setAttribute('title', '');
+  
 
   if (!fecha) {
     tabla.style.display = 'none';
@@ -626,6 +645,9 @@ fechaInput.addEventListener('change', () => {
     btnExportar.disabled = true;
     btnExportarPDF.disabled = true;
     inputIdListado.value = '';
+    // Ocultar formulario exportar si no hay selección
+    formExportar.style.display = 'none';
+    seleccionado = null;
     return;
   }
 
@@ -640,6 +662,8 @@ fechaInput.addEventListener('change', () => {
         btnExportar.disabled = true;
         btnExportarPDF.disabled = true;
         inputIdListado.value = '';
+        formExportar.style.display = 'none';
+        seleccionado = null;
         return;
       }
 
@@ -670,21 +694,20 @@ fechaInput.addEventListener('change', () => {
           inputIdListado.value = listado.id;
           btnExportar.disabled = false;
           btnExportarPDF.disabled = false;
+          formExportar.style.display = 'block';
 
-          // Configurar botón de asistencias
-          btnToggle.style.display = 'inline-block';
-          btnToggle.setAttribute('data-id', listado.id);
-          btnToggle.setAttribute('data-mode', 'ver');
-          btnToggle.textContent = '+';
-          btnToggle.classList.remove('volver');
-          btnToggle.classList.add('ver');
-          btnToggle.setAttribute('title', 'Ver asistencias');
         });
 
         tbody.appendChild(tr);
       });
 
       tabla.style.display = 'table';
+      // Por defecto no hay selección ni botones activos
+      btnExportar.disabled = true;
+      btnExportarPDF.disabled = true;
+      formExportar.style.display = 'none';
+      inputIdListado.value = '';
+      seleccionado = null;
     })
     .catch(err => {
       console.error('Error al buscar listados:', err);
@@ -693,6 +716,8 @@ fechaInput.addEventListener('change', () => {
       btnExportar.disabled = true;
       btnExportarPDF.disabled = true;
       inputIdListado.value = '';
+      formExportar.style.display = 'none';
+      seleccionado = null;
     });
 });
 
@@ -734,6 +759,11 @@ function mostrarAsistencias(idListado) {
 
       tablaListados.style.display = 'none';
       contenedorAsistencias.style.display = 'block';
+      btnVolver.style.display = 'inline-block';
+      formExportar.style.display = 'none';
+      // Ocultar título
+      document.getElementById('header-exportar').classList.add('oculto');
+
     })
     .catch(err => {
       console.error('Error al cargar asistencias:', err);
@@ -741,33 +771,7 @@ function mostrarAsistencias(idListado) {
     });
 }
 
-// Botón toggle para ver/ocultar asistencias
-btnToggle.addEventListener('click', () => {
-  const modo = btnToggle.getAttribute('data-mode');
-  const idListado = btnToggle.getAttribute('data-id');
 
-  if (modo === 'ver') {
-    if (!idListado) {
-      alert('No se ha seleccionado ningún listado.');
-      return;
-    }
-
-    mostrarAsistencias(idListado);
-    btnToggle.textContent = '−';
-    btnToggle.classList.remove('ver');
-    btnToggle.classList.add('volver');
-    btnToggle.setAttribute('data-mode', 'volver');
-    btnToggle.setAttribute('title', 'Ver listados');
-  } else {
-    contenedorAsistencias.style.display = 'none';
-    tablaListados.style.display = 'table';
-    btnToggle.textContent = '+';
-    btnToggle.classList.remove('volver');
-    btnToggle.classList.add('ver');
-    btnToggle.setAttribute('data-mode', 'ver');
-    btnToggle.setAttribute('title', 'Ver asistencias');
-  }
-});
 
 // Menú desplegable por fila
 document.addEventListener('click', function (e) {
@@ -825,13 +829,6 @@ document.addEventListener('click', function (e) {
 
     if (e.target.classList.contains('ver-asistencias')) {
       mostrarAsistencias(idListado);
-      btnToggle.textContent = '−';
-      btnToggle.classList.remove('ver');
-      btnToggle.classList.add('volver');
-      btnToggle.setAttribute('data-mode', 'volver');
-      btnToggle.setAttribute('title', 'Ver listados');
-      btnToggle.style.display = 'inline-block';
-      btnToggle.setAttribute('data-id', idListado);
     }
 
     // Cerrar el menú después de una acción
@@ -864,7 +861,36 @@ document.addEventListener('click', function (e) {
       document.getElementById('menuDropdown').classList.remove('show');
     });
   });
+  
+  const btnVolver = document.getElementById('btn_volver_listados');
+
+  btnVolver.addEventListener('click', () => {
+    contenedorAsistencias.style.display = 'none';
+    tablaListados.style.display = 'table';
+    btnVolver.style.display = 'none';
+
+    // Deseleccionar fila seleccionada
+    if (seleccionado) {
+      seleccionado.classList.remove('selected');
+      seleccionado = null;
+    }
+
+    // Limpiar el input de listado seleccionado
+    inputIdListado.value = '';
+
+    // Ocultar y desactivar botones exportar
+    btnExportar.disabled = true;
+    btnExportarPDF.disabled = true;
+
+    // Ocultar el formulario de exportar
+    formExportar.style.display = 'none';
+
+    // Mostrar el título y encabezado exportar
+    document.getElementById('header-exportar').classList.remove('oculto');
+  });
+
 </script>
+
 
 </body>
 
