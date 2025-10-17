@@ -1,0 +1,134 @@
+/* =========================================================
+💬 MODALES DE CONFIRMACIÓN — ESTILO PROFESIONAL INTEREMPLEO
+========================================================= */
+
+/* Fondo semitransparente */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(3px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    animation: modalFadeIn 0.25s ease;
+}
+
+/* Caja principal del modal */
+.modal-box {
+    background: #fff;
+    border-radius: 14px;
+    padding: 2rem 2.5rem;
+    width: 90%;
+    max-width: 420px;
+    text-align: center;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+    transform: translateY(-10px);
+    animation: modalSlideUp 0.3s ease forwards;
+}
+
+/* Título del modal */
+.modal-box h3 {
+    margin-top: 0;
+    color: var(--naranja);
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+/* Texto del modal */
+.modal-box p {
+    margin: 0.5rem 0 1.5rem;
+    color: #333;
+    line-height: 1.5;
+}
+
+/* Botones del modal */
+.modal-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Botón confirmar */
+.btn-confirmar {
+    background: var(--naranja);
+    color: #fff;
+    border: none;
+    padding: 0.6rem 1.4rem;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.btn-confirmar:hover {
+    background: #ff7f3d;
+    transform: translateY(-1px);
+}
+
+/* Botón cancelar */
+.btn-cancelar {
+    background: #e0e0e0;
+    color: #333;
+    border: none;
+    padding: 0.6rem 1.4rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.btn-cancelar:hover {
+    background: #d6d6d6;
+    transform: translateY(-1px);
+}
+
+/* ==============================
+🌀 Animaciones
+============================== */
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes modalSlideUp {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* ==============================
+📱 Adaptación Responsive
+============================== */
+@media (max-width: 600px) {
+    .modal-box {
+        width: 92%;
+        padding: 1.5rem;
+        font-size: 0.95rem;
+    }
+
+    .modal-box h3 {
+        font-size: 1.2rem;
+    }
+
+    .btn-confirmar,
+    .btn-cancelar {
+        width: 100%;
+        margin-top: 8px;
+    }
+}
