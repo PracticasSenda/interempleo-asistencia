@@ -134,8 +134,15 @@ body {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-5px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* =========================================================
@@ -199,11 +206,13 @@ body {
     margin-bottom: 10px;
     font-weight: 700;
 }
+
 .ok {
     background: #e8f8ee;
     color: #116c2f;
     border: 1px solid #bfe8cc;
 }
+
 .err {
     background: #fdecec;
     color: #8a1f1f;
@@ -219,7 +228,8 @@ table {
     font-size: 1rem;
 }
 
-th, td {
+th,
+td {
     border: 1px solid var(--borde);
     padding: 10px;
     text-align: center;
@@ -238,8 +248,14 @@ tr:nth-child(even) {
 .estado {
     font-weight: 700;
 }
-.act { color: #0a8f3a; }
-.inact { color: #c72626; }
+
+.act {
+    color: #0a8f3a;
+}
+
+.inact {
+    color: #c72626;
+}
 
 /* =========================================================
 🟠 BOTONES PILLS (Dar de baja / Reactivar)
@@ -255,7 +271,10 @@ tr:nth-child(even) {
     box-shadow: 0 2px 6px rgba(255, 103, 29, .25);
     transition: filter .2s;
 }
-.pill:hover { filter: brightness(1.05); }
+
+.pill:hover {
+    filter: brightness(1.05);
+}
 
 /* =========================================================
 📱 RESPONSIVE
@@ -286,14 +305,29 @@ tr:nth-child(even) {
         opacity: 0.95;
     }
 
-    table { font-size: 0.9rem; }
-    th, td { padding: 8px; }
+    table {
+        font-size: 0.9rem;
+    }
+
+    th,
+    td {
+        padding: 8px;
+    }
 }
 
 @media (max-width: 600px) {
-    .lado-izquierdo p { font-size: 1.2rem; }
-    table { font-size: 0.85rem; }
-    th, td { padding: 6px; }
+    .lado-izquierdo p {
+        font-size: 1.2rem;
+    }
+
+    table {
+        font-size: 0.85rem;
+    }
+
+    th,
+    td {
+        padding: 6px;
+    }
 }
 
 /* =========================================================
@@ -301,7 +335,10 @@ tr:nth-child(even) {
 ========================================================= */
 .modal-overlay {
     position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     background: rgba(0, 0, 0, 0.45);
     backdrop-filter: blur(2px);
     display: flex;
@@ -309,6 +346,7 @@ tr:nth-child(even) {
     align-items: center;
     z-index: 99999;
 }
+
 .modal-box {
     background: #fff;
     border-radius: 10px;
@@ -319,17 +357,20 @@ tr:nth-child(even) {
     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
     animation: fadeIn 0.25s ease;
 }
+
 .modal-box h3 {
     margin-top: 0;
     color: var(--naranja);
     font-size: 1.3rem;
 }
+
 .modal-buttons {
     display: flex;
     justify-content: center;
     gap: 10px;
     flex-wrap: wrap;
 }
+
 .btn-confirmar {
     background: var(--naranja);
     color: white;
@@ -339,9 +380,11 @@ tr:nth-child(even) {
     font-weight: bold;
     cursor: pointer;
 }
+
 .btn-confirmar:hover {
     background: #ff8842;
 }
+
 .btn-cancelar {
     background: #ccc;
     border: none;
@@ -350,6 +393,7 @@ tr:nth-child(even) {
     cursor: pointer;
     font-weight: bold;
 }
+
 .btn-cancelar:hover {
     background: #bdbdbd;
 }
@@ -389,6 +433,7 @@ tr:nth-child(even) {
         flex-direction: column;
         align-items: stretch;
     }
+
     .filters select,
     .filters input {
         width: 100%;
@@ -408,7 +453,7 @@ tr:nth-child(even) {
     background: #fafafa;
     border-radius: 10px;
     padding: 20px 25px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
 .form-alta input {
@@ -441,29 +486,156 @@ tr:nth-child(even) {
     background: #ff7f3d;
 }
 
+/* =========================================================
+🔐 CAMPOS DE CONTRASEÑA (Mostrar/Ocultar)
+========================================================= */
+
 .grupo-password {
     position: relative;
     display: flex;
     align-items: center;
     flex: 1 1 220px;
+    min-width: 200px;
 }
 
+/* Campo de texto */
 .grupo-password input {
     width: 100%;
-    padding-right: 40px; /* deja espacio para el botón del ojo */
+    padding-right: 42px;
+    /* espacio para el icono */
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
+.grupo-password input:focus {
+    outline: none;
+    border-color: var(--naranja);
+    box-shadow: 0 0 5px rgba(255, 103, 29, 0.3);
+}
+
+
+/* Botón del ojo */
 .toggle-pass {
     position: absolute;
-    right: 8px;
+    right: 10px;
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 1.1rem;
-    opacity: 0.7;
-    transition: opacity 0.2s;
+    padding: 4px;
+    color: #777;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease, transform 0.2s ease;
 }
 
-.toggle-pass:hover {
+/* SVG del ojo */
+.toggle-pass svg {
+    width: 22px;
+    height: 22px;
+    stroke: currentColor;
+    fill: none;
+}
+
+/* Compatibilidad Chrome */
+.toggle-pass svg path,
+.toggle-pass svg circle {
+    stroke: currentColor !important;
+    fill: none !important;
+}
+
+/* Hover y estado activo */
+.toggle-pass:hover,
+.toggle-pass.active {
+    color: var(--naranja);
+    transform: scale(1.1);
+}
+
+/* =========================================================
+💬 TOOLTIP ELEGANTE
+========================================================= */
+.toggle-pass::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 125%;
+    right: 50%;
+    transform: translateX(50%);
+    background: rgba(0, 0, 0, 0.85);
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 10;
+}
+
+/* Flechita del tooltip */
+.toggle-pass::before {
+    content: '';
+    position: absolute;
+    bottom: 115%;
+    right: 50%;
+    transform: translateX(50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(0, 0, 0, 0.85) transparent transparent transparent;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+/* Al pasar el ratón aparece */
+.toggle-pass:hover::after,
+.toggle-pass:hover::before {
     opacity: 1;
+    transform: translateX(50%) translateY(-2px);
+}
+
+/* =========================================================
+📱 RESPONSIVE - TABLET Y MÓVIL
+========================================================= */
+
+/* En pantallas medianas (tablets) */
+@media (max-width: 900px) {
+    .grupo-password {
+        flex: 1 1 100%;
+        max-width: 100%;
+    }
+
+    .toggle-pass {
+        right: 8px;
+    }
+
+    .toggle-pass::after {
+        font-size: 0.75rem;
+        bottom: 115%;
+    }
+}
+
+/* En pantallas pequeñas (móviles) */
+@media (max-width: 600px) {
+    .grupo-password {
+        flex: 1 1 100%;
+        max-width: 100%;
+    }
+
+    .grupo-password input {
+        font-size: 0.95rem;
+        padding: 10px;
+    }
+
+    .toggle-pass svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .toggle-pass::after {
+        display: none;
+        /* Oculta tooltip en móvil para no tapar el campo */
+    }
 }

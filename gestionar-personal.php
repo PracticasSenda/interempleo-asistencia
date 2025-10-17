@@ -70,7 +70,10 @@ $MSG = [
     'sin_permiso'    => 'No tienes permiso para esta acción.'
 ];
 
-function h($s) { return htmlspecialchars($s, ENT_QUOTES, 'UTF-8'); }
+function h($s)
+{
+    return htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
+}
 
 function redirect_with($params)
 {
@@ -92,15 +95,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->bind_param("i", $id);
                 $ok_exec = $stmt->execute();
                 $stmt->close();
-                redirect_with(['tipo' => $tipo, 'vista' => 'lista', 'estado' => $estado, 'q' => $q,
-                    'code' => $ok_exec ? 'baja_ok_trab' : 'err_sql', 'ok' => $ok_exec ? '1' : '0']);
+                redirect_with([
+                    'tipo' => $tipo,
+                    'vista' => 'lista',
+                    'estado' => $estado,
+                    'q' => $q,
+                    'code' => $ok_exec ? 'baja_ok_trab' : 'err_sql',
+                    'ok' => $ok_exec ? '1' : '0'
+                ]);
             } elseif ($tipo === 'encargados' && $rol === 'administrador') {
                 $stmt = $conexion->prepare("UPDATE usuarios SET activo=0 WHERE id=? AND rol='encargado'");
                 $stmt->bind_param("i", $id);
                 $ok_exec = $stmt->execute();
                 $stmt->close();
-                redirect_with(['tipo' => $tipo, 'vista' => 'lista', 'estado' => $estado, 'q' => $q,
-                    'code' => $ok_exec ? 'baja_ok_enc' : 'err_sql', 'ok' => $ok_exec ? '1' : '0']);
+                redirect_with([
+                    'tipo' => $tipo,
+                    'vista' => 'lista',
+                    'estado' => $estado,
+                    'q' => $q,
+                    'code' => $ok_exec ? 'baja_ok_enc' : 'err_sql',
+                    'ok' => $ok_exec ? '1' : '0'
+                ]);
             }
         }
     }
@@ -207,221 +222,271 @@ $res = $stmt->get_result();
 ?>
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= h($titulo) ?> - Interempleo</title>
     <link rel="stylesheet" href="css/style-global.css">
 </head>
+
 <body>
-<?php include("header.php"); ?>
+    <?php include("header.php"); ?>
 
-<div class="wrap">
-    <h2 class="titulo-seccion"><?= h($titulo) ?></h2>
+    <div class="wrap">
+        <h2 class="titulo-seccion"><?= h($titulo) ?></h2>
 
-    <div class="actions">
-        <a class="btn <?= $vista === 'lista' ? 'btn-primary active' : 'btn-secondary' ?>" href="?tipo=<?= h($tipo) ?>&vista=lista">Ver Listado</a>
-        <a class="btn <?= $vista === 'alta' ? 'btn-primary active' : 'btn-secondary' ?>" href="?tipo=<?= h($tipo) ?>&vista=alta">Dar de Alta</a>
-    </div>
+        <div class="actions">
+            <a class="btn <?= $vista === 'lista' ? 'btn-primary active' : 'btn-secondary' ?>" href="?tipo=<?= h($tipo) ?>&vista=lista">Ver Listado</a>
+            <a class="btn <?= $vista === 'alta' ? 'btn-primary active' : 'btn-secondary' ?>" href="?tipo=<?= h($tipo) ?>&vista=alta">Dar de Alta</a>
+        </div>
 
-    <?php if ($code): ?>
-        <div class="banner <?= $ok ? 'ok' : 'err' ?>"><?= h($MSG[$code] ?? 'Operación realizada.') ?></div>
-    <?php endif; ?>
-
-    <div class="panel">
-        <?php if ($vista === 'alta'): ?>
-            <form class="form-alta" method="POST">
-                <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
-                <input type="hidden" name="accion" value="alta">
-                <input type="text" name="nombre" placeholder="Nombre" required oninput="this.value=this.value.toUpperCase()">
-                <input type="text" name="apellidos" placeholder="Apellidos" required oninput="this.value=this.value.toUpperCase()">
-                <input type="text" name="dni" placeholder="DNI" required oninput="this.value=this.value.toUpperCase()">
-               <?php if ($tipo === 'encargados' && $rol === 'administrador'): ?>
-    <div class="grupo-password">
-        <input type="password" name="contraseña" id="contraseña" placeholder="Contraseña" required>
-        <button type="button" class="toggle-pass" onclick="togglePassword('contraseña', this)">👁️</button>
-    </div>
-
-    <div class="grupo-password">
-        <input type="password" name="confirmar_contraseña" id="confirmar_contraseña" placeholder="Confirmar contraseña" required>
-        <button type="button" class="toggle-pass" onclick="togglePassword('confirmar_contraseña', this)">👁️</button>
-    </div>
-<?php endif; ?>
-
-                <button class="btn submit" type="submit">Guardar</button>
-            </form>
-        <?php else: ?>
-            <form class="filters" method="GET">
-                <input type="hidden" name="tipo" value="<?= h($tipo) ?>">
-                <input type="hidden" name="vista" value="lista">
-                <label>Estado:
-                    <select name="estado" onchange="this.form.submit()">
-                        <option value="todos" <?= $estado === 'todos' ? 'selected' : '' ?>>Todos</option>
-                        <option value="activo" <?= $estado === 'activo' ? 'selected' : '' ?>>Activo</option>
-                        <option value="inactivo" <?= $estado === 'inactivo' ? 'selected' : '' ?>>Inactivo</option>
-                    </select>
-                </label>
-                <input type="text" name="q" id="buscador" value="<?= h($q) ?>" placeholder="Buscar por DNI o Nombre" autocomplete="off">
-                <label>Ordenar:
-                    <select name="orden" onchange="this.form.submit()">
-                        <option value="recientes" <?= ($orden === 'recientes') ? 'selected' : '' ?>>Más recientes</option>
-                        <option value="alfabetico" <?= ($orden === 'alfabetico') ? 'selected' : '' ?>>A-Z (alfabético)</option>
-                    </select>
-                </label>
-            </form>
-
-            <table>
-                <tr>
-                    <th>Nombre</th>
-                    <th>Apellidos</th>
-                    <th>DNI</th>
-                    <th>Estado</th>
-                    <th>Acción</th>
-                </tr>
-                <?php while ($fila = $res->fetch_assoc()): ?>
-                    <tr>
-                        <td><?= h($fila['nombre']) ?></td>
-                        <td><?= h($fila['apellidos']) ?></td>
-                        <td><?= h($fila['dni']) ?></td>
-                        <?php $activo = intval($fila['activo']) === 1; ?>
-                        <td class="estado <?= $activo ? 'act' : 'inact' ?>"><?= $activo ? '● Activo' : '● Inactivo' ?></td>
-                        <td>
-                            <?php if ($activo): ?>
-                                <form method="POST" onsubmit="return abrirModalBaja(this, '<?= addslashes(h($fila['nombre'].' '.$fila['apellidos'])) ?>');" style="margin:0;">
-                                    <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
-                                    <input type="hidden" name="accion" value="baja">
-                                    <input type="hidden" name="id" value="<?= h($fila['id']) ?>">
-                                    <button type="submit" class="pill">Dar de baja</button>
-                                </form>
-                            <?php else: ?>
-                                <form method="POST" onsubmit="return abrirModalAlta(this, '<?= addslashes(h($fila['nombre'].' '.$fila['apellidos'])) ?>');" style="margin:0;">
-                                    <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
-                                    <input type="hidden" name="accion" value="alta">
-                                    <input type="hidden" name="nombre" value="<?= h($fila['nombre']) ?>">
-                                    <input type="hidden" name="apellidos" value="<?= h($fila['apellidos']) ?>">
-                                    <input type="hidden" name="dni" value="<?= h($fila['dni']) ?>">
-                                    <?php if ($tipo === 'encargados' && $rol === 'administrador'): ?>
-                                        <input type="hidden" name="contraseña" value="1234">
-                                    <?php endif; ?>
-                                    <button type="submit" class="pill" style="background:#28a745;">Reactivar</button>
-                                </form>
-                            <?php endif; ?>
-                        </td>
-                    </tr>
-                <?php endwhile; $stmt->close(); ?>
-            </table>
+        <?php if ($code): ?>
+            <div class="banner <?= $ok ? 'ok' : 'err' ?>"><?= h($MSG[$code] ?? 'Operación realizada.') ?></div>
         <?php endif; ?>
-    </div>
-</div>
 
-<!-- Modales -->
-<div id="modalBaja" class="modal-overlay" style="display:none;">
-    <div class="modal-box">
-        <h3>Confirmar acción</h3>
-        <p id="modalTexto"></p>
-        <div class="modal-buttons">
-            <button id="btnConfirmar" class="btn-confirmar">Sí, dar de baja</button>
-            <button id="btnCancelar" class="btn-cancelar">Cancelar</button>
+        <div class="panel">
+            <?php if ($vista === 'alta'): ?>
+                <form class="form-alta" method="POST">
+                    <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
+                    <input type="hidden" name="accion" value="alta">
+                    <input type="text" name="nombre" placeholder="Nombre" required oninput="this.value=this.value.toUpperCase()">
+                    <input type="text" name="apellidos" placeholder="Apellidos" required oninput="this.value=this.value.toUpperCase()">
+                    <input type="text" name="dni" placeholder="DNI" required oninput="this.value=this.value.toUpperCase()">
+
+                    <?php if ($tipo === 'encargados' && $rol === 'administrador'): ?>
+                        <div class="grupo-password">
+                            <input type="password" name="contraseña" id="contraseña" placeholder="Contraseña" required>
+                            <button type="button" class="toggle-pass" data-tooltip="Mostrar contraseña" onclick="togglePassword('contraseña', this)">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="grupo-password">
+                            <input type="password" name="confirmar_contraseña" id="confirmar_contraseña" placeholder="Confirmar contraseña" required>
+                            <button type="button" class="toggle-pass" data-tooltip="Mostrar contraseña" onclick="togglePassword('confirmar_contraseña', this)">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                        </div>
+
+                    <?php endif; ?>
+
+                    <button class="btn submit" type="submit">Guardar</button>
+                </form>
+            <?php else: ?>
+
+                <form class="filters" method="GET">
+                    <input type="hidden" name="tipo" value="<?= h($tipo) ?>">
+                    <input type="hidden" name="vista" value="lista">
+
+                    <label>Estado:
+                        <select name="estado" onchange="this.form.submit()">
+                            <option value="todos" <?= $estado === 'todos'     ? 'selected' : '' ?>>Todos</option>
+                            <option value="activo" <?= $estado === 'activo'    ? 'selected' : '' ?>>Activo</option>
+                            <option value="inactivo" <?= $estado === 'inactivo'  ? 'selected' : '' ?>>Inactivo</option>
+                        </select>
+                    </label>
+
+                    <input type="text" name="q" id="buscador"
+                        value="<?= h($q) ?>" placeholder="Buscar por DNI o Nombre" autocomplete="off">
+
+                    <label>Ordenar:
+                        <select name="orden" onchange="this.form.submit()">
+                            <option value="recientes" <?= ($orden === 'recientes')  ? 'selected' : '' ?>>Más recientes</option>
+                            <option value="alfabetico" <?= ($orden === 'alfabetico') ? 'selected' : '' ?>>A-Z (alfabético)</option>
+                        </select>
+                    </label>
+                </form>
+
+                <table>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Apellidos</th>
+                        <th>DNI</th>
+                        <th>Estado</th>
+                        <th>Acción</th>
+                    </tr>
+                    <?php while ($fila = $res->fetch_assoc()): ?>
+                        <tr>
+                            <td><?= h($fila['nombre']) ?></td>
+                            <td><?= h($fila['apellidos']) ?></td>
+                            <td><?= h($fila['dni']) ?></td>
+                            <?php $activo = intval($fila['activo']) === 1; ?>
+                            <td class="estado <?= $activo ? 'act' : 'inact' ?>"><?= $activo ? '● Activo' : '● Inactivo' ?></td>
+                            <td>
+                                <?php if ($activo): ?>
+                                    <form method="POST" onsubmit="return abrirModalBaja(this, '<?= addslashes(h($fila['nombre'] . ' ' . $fila['apellidos'])) ?>');" style="margin:0;">
+                                        <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
+                                        <input type="hidden" name="accion" value="baja">
+                                        <input type="hidden" name="id" value="<?= h($fila['id']) ?>">
+                                        <button type="submit" class="pill">Dar de baja</button>
+                                    </form>
+                                <?php else: ?>
+                                    <form method="POST" onsubmit="return abrirModalAlta(this, '<?= addslashes(h($fila['nombre'] . ' ' . $fila['apellidos'])) ?>');" style="margin:0;">
+                                        <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
+                                        <input type="hidden" name="accion" value="alta">
+                                        <input type="hidden" name="nombre" value="<?= h($fila['nombre']) ?>">
+                                        <input type="hidden" name="apellidos" value="<?= h($fila['apellidos']) ?>">
+                                        <input type="hidden" name="dni" value="<?= h($fila['dni']) ?>">
+                                        <?php if ($tipo === 'encargados' && $rol === 'administrador'): ?>
+                                            <input type="hidden" name="contraseña" value="1234">
+                                        <?php endif; ?>
+                                        <button type="submit" class="pill" style="background:#28a745;">Reactivar</button>
+                                    </form>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endwhile;
+                    $stmt->close(); ?>
+                </table>
+            <?php endif; ?>
         </div>
     </div>
-</div>
 
-<div id="modalAlta" class="modal-overlay" style="display:none;">
-    <div class="modal-box">
-        <h3>Confirmar reactivación</h3>
-        <p id="modalTextoAlta"></p>
-        <div class="modal-buttons">
-            <button id="btnConfirmarAlta" class="btn-confirmar">Sí, dar de alta</button>
-            <button id="btnCancelarAlta" class="btn-cancelar">Cancelar</button>
+    <!-- Modales -->
+    <div id="modalBaja" class="modal-overlay" style="display:none;">
+        <div class="modal-box">
+            <h3>Confirmar acción</h3>
+            <p id="modalTexto"></p>
+            <div class="modal-buttons">
+                <button id="btnConfirmar" class="btn-confirmar">Sí, dar de baja</button>
+                <button id="btnCancelar" class="btn-cancelar">Cancelar</button>
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-// Buscador en tiempo real
-document.addEventListener("DOMContentLoaded", function() {
-    const buscador = document.getElementById("buscador");
-    if (!buscador) return;
-    function quitarTildes(str) {
-        return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                  .replace(/ñ/g, "n").replace(/Ñ/g, "N").toLowerCase().trim();
-    }
-    buscador.addEventListener("keyup", function() {
-        const texto = quitarTildes(this.value);
-        const partes = texto.split(/\s+/);
-        const filas = document.querySelectorAll("table tbody tr");
-        filas.forEach(fila => {
-            const contenido = quitarTildes(fila.textContent);
-            fila.style.display = partes.every(p => contenido.includes(p)) ? "" : "none";
+    <div id="modalAlta" class="modal-overlay" style="display:none;">
+        <div class="modal-box">
+            <h3>Confirmar reactivación</h3>
+            <p id="modalTextoAlta"></p>
+            <div class="modal-buttons">
+                <button id="btnConfirmarAlta" class="btn-confirmar">Sí, dar de alta</button>
+                <button id="btnCancelarAlta" class="btn-cancelar">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <?php include("footer.php"); ?>
+
+    <!-- =========================
+     SCRIPTS (buscador, modales, password)
+     ========================= -->
+    <script>
+        // Buscador en tiempo real (ignora tildes)
+        document.addEventListener("DOMContentLoaded", function() {
+            const buscador = document.getElementById("buscador");
+            if (!buscador) return;
+
+            function quitarTildes(str) {
+                return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                    .replace(/ñ/g, "n").replace(/Ñ/g, "N").toLowerCase().trim();
+            }
+            buscador.addEventListener("keyup", function() {
+                const texto = quitarTildes(this.value);
+                const partes = texto.split(/\s+/);
+                const filas = document.querySelectorAll("table tbody tr");
+                filas.forEach(fila => {
+                    const contenido = quitarTildes(fila.textContent);
+                    fila.style.display = partes.every(p => contenido.includes(p)) ? "" : "none";
+                });
+            });
         });
-    });
-});
 
-// Modales
-let formPendiente = null;
-function abrirModalBaja(form, nombreCompleto) {
-    formPendiente = form;
-    document.getElementById("modalTexto").innerHTML =
-        `¿Estás seguro de que deseas dar de baja a ${nombreCompleto}?`;
-    document.getElementById("modalBaja").style.display = "flex";
-    return false;
-}
+        // Modales
+        let formPendiente = null;
 
-let formAltaPendiente = null;
-function abrirModalAlta(form, nombreCompleto) {
-    formAltaPendiente = form;
-    document.getElementById("modalTextoAlta").innerHTML =
-        `¿Deseas volver a dar de alta a ${nombreCompleto}?`;
-    document.getElementById("modalAlta").style.display = "flex";
-    return false;
-}
+        function abrirModalBaja(form, nombreCompleto) {
+            formPendiente = form;
+            document.getElementById("modalTexto").textContent =
+                `¿Estás seguro de que deseas dar de baja a ${nombreCompleto}?`;
+            document.getElementById("modalBaja").style.display = "flex";
+            return false;
+        }
 
-document.getElementById("btnConfirmar").onclick = () => {
-    if (formPendiente) formPendiente.submit();
-    cerrarModal("modalBaja");
-};
-document.getElementById("btnCancelar").onclick = () => cerrarModal("modalBaja");
-document.getElementById("btnConfirmarAlta").onclick = () => {
-    if (formAltaPendiente) formAltaPendiente.submit();
-    cerrarModal("modalAlta");
-};
-document.getElementById("btnCancelarAlta").onclick = () => cerrarModal("modalAlta");
+        let formAltaPendiente = null;
 
-function cerrarModal(id) {
-    document.getElementById(id).style.display = "none";
-}
-</script>
+        function abrirModalAlta(form, nombreCompleto) {
+            formAltaPendiente = form;
+            document.getElementById("modalTextoAlta").textContent =
+                `¿Deseas volver a dar de alta a ${nombreCompleto}?`;
+            document.getElementById("modalAlta").style.display = "flex";
+            return false;
+        }
 
-<script>
+        document.getElementById("btnConfirmar").onclick = () => {
+            if (formPendiente) formPendiente.submit();
+            cerrarModal("modalBaja");
+        };
+        document.getElementById("btnCancelar").onclick = () => cerrarModal("modalBaja");
+        document.getElementById("btnConfirmarAlta").onclick = () => {
+            if (formAltaPendiente) formAltaPendiente.submit();
+            cerrarModal("modalAlta");
+        };
+        document.getElementById("btnCancelarAlta").onclick = () => cerrarModal("modalAlta");
+
+        function cerrarModal(id) {
+            document.getElementById(id).style.display = "none";
+        }
+
+        // ====== Password: mostrar/ocultar + validar coincidencia sin emojis ======
+        const SVG_EYE = `
+<svg xmlns="http://www.w3.org/2000/svg" class="icon-eye" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5
+       c4.478 0 8.268 2.943 9.542 7
+       -1.274 4.057-5.064 7-9.542 7
+       -4.477 0-8.268-2.943-9.542-7z" />
+</svg>`;
+
+        const SVG_EYE_OFF = `
+<svg xmlns="http://www.w3.org/2000/svg" class="icon-eye" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19
+       c-4.477 0-8.268-2.943-9.542-7
+       a10.65 10.65 0 012.51-4.181M6.18 6.18
+       A10.05 10.05 0 0112 5c4.478 0 8.268 2.943 9.542 7
+       a10.65 10.65 0 01-2.51 4.181M15 12a3 3 0 00-3-3m0 0
+       a3 3 0 00-3 3m3-3l-9 9" />
+</svg>`;
+
 function togglePassword(id, btn) {
     const input = document.getElementById(id);
-    if (input.type === "password") {
-        input.type = "text";
-        btn.textContent = "🙈";
-    } else {
-        input.type = "password";
-        btn.textContent = "👁️";
-    }
+    if (!input) return;
+
+    const showing = input.type === "text";
+    input.type = showing ? "password" : "text";
+
+    // Cambiar estado visual del botón
+    btn.classList.toggle("active", !showing);
+
+    // Actualizar tooltip dinámico
+    btn.setAttribute("data-tooltip", showing ? "Mostrar contraseña" : "Ocultar contraseña");
 }
 
-// Verifica que ambas contraseñas coincidan antes de enviar el formulario
-document.addEventListener("DOMContentLoaded", () => {
-    const form = document.querySelector(".form-alta");
-    if (!form) return;
 
-    form.addEventListener("submit", (e) => {
-        const pass = document.getElementById("contraseña");
-        const confirm = document.getElementById("confirmar_contraseña");
-        if (pass && confirm && pass.value !== confirm.value) {
-            e.preventDefault();
-            alert("Las contraseñas no coinciden. Por favor, verifícalas.");
-            confirm.focus();
-        }
-    });
-});
-</script>
+        // Validar que ambas contraseñas coincidan antes de enviar
+        document.addEventListener("DOMContentLoaded", () => {
+            const form = document.querySelector(".form-alta");
+            if (!form) return;
 
-
-<?php include("footer.php"); ?>
+            form.addEventListener("submit", (e) => {
+                const pass = document.getElementById("contraseña");
+                const confirm = document.getElementById("confirmar_contraseña");
+                if (pass && confirm && pass.closest(".grupo-password")) {
+                    if (pass.value !== confirm.value) {
+                        e.preventDefault();
+                        alert("Las contraseñas no coinciden. Por favor, verifícalas.");
+                        confirm.focus();
+                    }
+                }
+            });
+        });
+    </script>
 </body>
+
 </html>
