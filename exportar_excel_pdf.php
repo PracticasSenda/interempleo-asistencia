@@ -8,6 +8,7 @@ include("validar_sesion.php");
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Exportar asistencia por fecha</title>
+  
 
   <style>
     :root {
@@ -35,21 +36,7 @@ include("validar_sesion.php");
       padding: 0;
     }
 
-    /* BARRA SUPERIOR */
-    .barra-superior {
-      background-color: var(--color-principal);
-      color: white;
-      padding: 1.5rem 1.75rem;
-      font-size: 1.5rem;
-      font-weight: normal;
-      text-align: left;
-      position: relative;
-      /* para que btn-volver no desplace */
-    }
-
-    .barra-superior span {
-      font-weight: bold;
-    }
+    
 
     /* BOTÓN VOLVER A ASISTENCIAS */
     .btn-volver {
@@ -421,45 +408,7 @@ td {
   color: white;
 }
 
-.menu-dropdown {
-  display: none;
-  flex-direction: column;
-  position: absolute;
-  top: 70px;
-  left: 1rem;
-  background-color: white;
-  border: 1px solid #ccc;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  z-index: 9999;
-  padding: 1.5rem;
-  border-radius: 8px;
-  min-width: 240px;
-  font-size: 1.3rem;  /* Aumenta el tamaño de letra */
-}
 
-.menu-dropdown a {
-  padding: 0.75rem 0;               /* Aumenta espacio entre enlaces */
-  color: var(--color-texto);
-  text-decoration: none;
-  border-bottom: 1px solid #eee;
-  font-size: 1.3rem;               /* Más grande aún los links */
-}
-
-.menu-dropdown a:last-child {
-  border-bottom: none;
-}
-
-.menu-dropdown a:hover {
-  color: var(--color-principal);
-  background-color: #f5f5f5;       /* Mejora visibilidad al pasar el mouse */
-  border-radius: 4px;
-  padding-left: 0.5rem;
-}
-
-
-.menu-dropdown.show {
-  display: flex;
-}
 .menu-toggle {
   margin-left: 0;
   padding-left: 0;
@@ -529,7 +478,109 @@ td {
   }
   .btn-cancelar:hover {
     background-color: #bbb;
-  }
+  } .barra-superior {
+    background-color: var(--color-principal);
+    color: white;
+    padding: 1.2rem 2rem;
+    font-size: 1.4rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+.contenedor-barra {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.lado-izquierdo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.lado-izquierdo p {
+    margin: 0;
+    font-size: 1.4rem;
+}
+
+.lado-izquierdo span {
+    font-weight: bold;
+}
+
+/* === Mensaje de bienvenida === */
+.bienvenida {
+    font-size: 1rem;
+    font-weight: bold;
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* =========================================================
+🍔 MENÚ HAMBURGUESA Y DESPLEGABLE
+========================================================= */
+.menu-toggle {
+    font-size: 1.8rem;
+    cursor: pointer;
+    background: none;
+    border: none;
+    color: white;
+    transition: transform 0.2s;
+}
+
+.menu-toggle:hover {
+    transform: scale(1.15);
+}
+
+.menu-dropdown {
+    display: none;
+    flex-direction: column;
+    position: absolute;
+    top: 100%;
+    left: 2rem;
+    background: #fff;
+    border: 1px solid #ddd;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    overflow: hidden;
+    animation: fadeIn 0.2s ease;
+    min-width: 230px;
+    z-index: 9999;
+}
+
+.menu-dropdown.show {
+    display: flex;
+}
+
+.menu-dropdown a {
+    color: #333;
+    padding: 12px 16px;
+    text-decoration: none;
+    border-bottom: 1px solid #eee;
+    font-weight: 500;
+}
+
+.menu-dropdown a:hover {
+    background-color: #f9f9f9;
+    color: var(--color-principal);
+}
+
+.menu-dropdown a.activo {
+    background-color: #ffe8dc;
+    color: var(--color-principal);
+    font-weight: bold;
+}
+
+.menu-dropdown a:last-child {
+    border-bottom: none;
+}
+
+
 
 
 
@@ -545,14 +596,7 @@ td {
 <body>
 
 
-  <div class="barra-superior">
-    <!-- Botón de menú + título central -->
-  <div style="display: flex; align-items: center; gap: 1rem;">
-  <div class="menu-toggle" onclick="toggleMenu()">☰</div>
-  <p style="margin: 0;"><span>Inter</span>empleo - Exportar</p>
-  </div>
-  </div>
-
+<?php include("header.php");?>
   <!-- Dropdown del menú -->
 <div class="menu-dropdown" id="menuDropdown">
 

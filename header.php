@@ -46,7 +46,7 @@ $tipo = $_GET['tipo'] ?? '';
 
         <a href="exportar_excel_pdf.php"
            class="<?= ($pagina_actual === 'exportar_excel_pdf.php') ? 'activo' : '' ?>">
-           Exportar Excel/PDF
+           Gestionar listados
         </a>
 
         <a href="cerrar_sesion.php">Cerrar sesión</a>

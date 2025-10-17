@@ -8,6 +8,7 @@ include("validar_sesion.php");
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Asistencias</title>
+  
   <style>
     :root {
       --color-principal: #FF671D;
@@ -29,82 +30,110 @@ include("validar_sesion.php");
       margin: 0;
       padding: 0;
     }
-
-    /* ENCABEZADO */
     .barra-superior {
-      background-color: var(--color-principal);
-      color: white;
-      padding: 1.5rem 2rem;
-      font-size: 1.5rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-    }
+    background-color: var(--color-principal);
+    color: white;
+    padding: 1.2rem 2rem;
+    font-size: 1.4rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
 
-    .barra-superior p {
-      margin: 0;
-      font-weight: normal;
-      font-size: 1.4rem;
-    }
+.contenedor-barra {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
 
-    .barra-superior span {
-      font-weight: bold;
-    }
+.lado-izquierdo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
 
-    .barra-superior a {
-      color: white;
-      text-decoration: none;
-      border: 2px solid white;
-      padding: 0.5rem 1rem;
-      border-radius: 4px;
-      font-size: 0.95rem;
-    }
+.lado-izquierdo p {
+    margin: 0;
+    font-size: 1.4rem;
+}
 
-    .menu-toggle {
-      font-size: 1.8rem;
-      cursor: pointer;
-      margin-right: 1rem;
-      user-select: none;
-    }
+.lado-izquierdo span {
+    font-weight: bold;
+}
 
-    .menu-dropdown {
-  display: none;
-  flex-direction: column;
-  position: absolute;
-  top: 70px;
-  left: 1rem;
-  background-color: white;
-  border: 1px solid #ccc;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  z-index: 9999;
-  padding: 1.5rem;          /* Más espacio interno */
-  border-radius: 8px;
-  min-width: 260px;         /* Más ancho */
-  font-size: 1.45rem;        /* Letras más grandes */
+/* === Mensaje de bienvenida === */
+.bienvenida {
+    font-size: 1rem;
+    font-weight: bold;
+    text-align: right;
+    white-space: nowrap;
+}
+
+/* =========================================================
+🍔 MENÚ HAMBURGUESA Y DESPLEGABLE
+========================================================= */
+.menu-toggle {
+    font-size: 1.8rem;
+    cursor: pointer;
+    background: none;
+    border: none;
+    color: white;
+    transition: transform 0.2s;
+}
+
+.menu-toggle:hover {
+    transform: scale(1.15);
+}
+
+.menu-dropdown {
+    display: none;
+    flex-direction: column;
+    position: absolute;
+    top: 100%;
+    left: 2rem;
+    background: #fff;
+    border: 1px solid #ddd;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    overflow: hidden;
+    animation: fadeIn 0.2s ease;
+    min-width: 230px;
+    z-index: 9999;
+}
+
+.menu-dropdown.show {
+    display: flex;
 }
 
 .menu-dropdown a {
-  padding: 0.8rem 0;        /* Más espacio entre opciones */
-  color: var(--color-texto);
-  text-decoration: none;
-  border-bottom: 1px solid #eee;
-  font-size: 1.45rem;
-}
-
-.menu-dropdown a:last-child {
-  border-bottom: none;
+    color: #333;
+    padding: 12px 16px;
+    text-decoration: none;
+    border-bottom: 1px solid #eee;
+    font-weight: 500;
 }
 
 .menu-dropdown a:hover {
-  color: var(--color-principal);
+    background-color: #f9f9f9;
+    color: var(--color-principal);
+}
+
+.menu-dropdown a.activo {
+    background-color: #ffe8dc;
+    color: var(--color-principal);
+    font-weight: bold;
+}
+
+.menu-dropdown a:last-child {
+    border-bottom: none;
 }
 
 
-    /* Mostrar el menú cuando se activa */
-    .menu-dropdown.show {
-      display: flex;
-    }
+   
 
     /* Ajustes responsive */
     @media (max-width: 768px) {
@@ -314,11 +343,7 @@ include("validar_sesion.php");
 
 <body>
 
-  <div class="barra-superior">
-    <div name="en_linea" style="text-align:left">
-      <div style="display:inline-block; width:10%; margin-right:40%; vertical-align:top;" class="menu-toggle" onclick="toggleMenu()">☰</div>
-      <p style="text-align:center; display:inline-block; width:45% ;"><span>Inter</span>empleo - Asistencia</p>
-    </div>
+  <?php include("header.php");?>
 
     <div class="menu-dropdown" id="menuDropdown">
       <a href="gestionar-personal.php?tipo=trabajadores&vista=lista">Gestión de trabajadores</a>
