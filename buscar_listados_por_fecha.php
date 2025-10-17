@@ -8,12 +8,26 @@ if (!isset($_GET['fecha']) || empty($_GET['fecha'])) {
 
 $fecha = mysqli_real_escape_string($conexion, $_GET['fecha']);
 
-// Aquí ajusta tu consulta para sacar los listados únicos de esa fecha
-$sql = "SELECT DISTINCT id_listado AS id, empresa, producto, fecha 
-        FROM asistencias 
-        WHERE fecha = '$fecha'";
+$sql = "
+    SELECT DISTINCT 
+        a.id_listado AS id, 
+        a.empresa, 
+        a.producto, 
+        a.fecha,
+        CONCAT(u.nombre, ' ', u.apellidos) AS encargado
+    FROM asistencias a
+    INNER JOIN listados_asistencias la ON a.id_listado = la.id
+    INNER JOIN usuarios u ON la.id_encargado = u.id
+    WHERE a.fecha = '$fecha'
+";
 
 $result = mysqli_query($conexion, $sql);
+
+if (!$result) {
+    http_response_code(500);
+    echo json_encode(['error' => 'Error en la consulta SQL: ' . mysqli_error($conexion)]);
+    exit;
+}
 
 $listados = [];
 while ($row = mysqli_fetch_assoc($result)) {
@@ -23,5 +37,3 @@ while ($row = mysqli_fetch_assoc($result)) {
 header('Content-Type: application/json');
 echo json_encode($listados);
 exit;
-
-

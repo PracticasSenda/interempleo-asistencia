@@ -266,52 +266,6 @@ include("validar_sesion.php");
       color: var(--color-texto);
       user-select: none;
     }
-
-    #btn_exportar {
-      background-color: var(--color-principal);
-      color: white;
-      border: none;
-      border-radius: 4px;
-      font-size: 1rem;
-      padding: 0.6rem 1.2rem;
-      margin-top: 1rem;
-      cursor: pointer;
-      display: block;
-      margin-left: auto;
-      margin-right: auto;
-      transition: background-color 0.3s ease;
-    }
-
-    #btn_exportar:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    #btn_exportar:hover:enabled {
-      background-color: #e65c17;
-    }
-
-    #btn_exportar_pdf {
-      background-color: #e04e2b;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      font-size: 1rem;
-      padding: 0.6rem 1.2rem;
-      margin-top: 1rem;
-      margin-left: 0.5rem;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-
-    #btn_exportar_pdf:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    #btn_exportar_pdf:hover:enabled {
-      background-color: #c84323;
-    }
     /* Botón + para ver asistencias */
 .btn-ver-asistencias {
   background-color: #ff671d;
@@ -391,16 +345,32 @@ td.observaciones {
   opacity: 0.85;
 }
 .btn-opciones {
+  position:relative;
+  width: 40px;          /* Ancho fijo para área clicable amplia */
+  height: 40px;         /* Alto fijo para que sea cuadrado */
   background-color: transparent;
   border: none;
   color: black;
   font-size: 1.5rem;
   cursor: pointer;
+  
+  display: inline-flex;           /* Para centrar el contenido */
+  align-items: center;            /* Centrado vertical */
+  justify-content: center;        /* Centrado horizontal */
+  border-radius:30px;
   padding: 0;
   margin: 0;
   line-height: 1;
+  z-index:9999;
+  transition: background-color 0.3s ease, color 0.3s ease, border 0.3s ease;
 }
-
+.btn-opciones:focus,
+.btn-opciones:active {
+  background-color: black;/* azul */
+  color: white;              /* texto blanco para contraste */
+  outline: none;
+  border:1px solid white;            /* quitar borde por defecto */
+}
 .menu-opciones {
   position: absolute;
   top: 100%;
@@ -494,12 +464,7 @@ td {
   margin-left: 0;
   padding-left: 0;
 }
-#header-exportar {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
+
 
 #form_exportar {
   display: flex;
@@ -511,6 +476,60 @@ td {
   opacity: 0;
   pointer-events: none;
 }
+ /* Modal estilo */
+  #modalExportar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right:0;
+    bottom:0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+  }
+  #modalExportar .modal-content {
+    background: white;
+    padding: 1.5rem 2rem;
+    border-radius: 8px;
+    width: 300px;
+    text-align: center;
+    font-family: Arial, sans-serif;
+  }
+  #modalExportar p {
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+    color: #FF671D; /* naranja principal */
+    font-weight: bold;
+  }
+  #modalExportar .modal-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+  }
+  #modalExportar button {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1rem;
+  }
+  .btn-confirmar {
+    background-color: #FF671D;
+    color: white;
+  }
+  .btn-confirmar:hover {
+    background-color: #e65a00;
+  }
+  .btn-cancelar {
+    background-color: #ddd;
+    color: #333;
+  }
+  .btn-cancelar:hover {
+    background-color: #bbb;
+  }
 
 
 
@@ -551,16 +570,11 @@ td {
     <form id="form-buscar" method="GET" action="buscar_listado_por_fecha.php">
       <label for="fecha_buscar">Buscar listados por fecha:</label>
       <input type="date" id="fecha_buscar" name="fecha" required />
+      <input type="hidden" id="id_listado" name="id_listado" />
+
     </form>
 
-   <div id="header-exportar" style="display: flex; align-items: center; gap: 1rem;">
-  <h2 class="titulo-listado">Selecciona un listado</h2>
-  <form id="form_exportar" method="get" action="funcion_exportar_excel.php" target="_blank" style="margin: 0;">
-    <input type="hidden" name="id_listado" id="id_listado" />
-    <button type="submit" id="btn_exportar" disabled>Exportar a Excel</button>
-    <button type="button" id="btn_exportar_pdf" disabled>Exportar a PDF</button>
-  </form>
-</div>
+    <h2 class="titulo-listado">Selecciona un listado</h2>
 
 
     <table id="tabla_listados" style="display:none;">
@@ -570,11 +584,25 @@ td {
           <th>Empresa</th>
           <th>Producto</th>
           <th>Fecha</th>
+          <th>Encargado</th>
+
           <th>Opciones</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
+
+    <!-- MODAL para confirmación de exportar -->
+<div id="modalExportar" style="display:none;">
+  <div class="modal-content">
+    <p id="modal-text">¿Quieres exportar este listado?</p>
+    <div class="modal-buttons">
+      <button id="confirmarExportar" class="btn-confirmar">Confirmar</button>
+      <button id="cancelarExportar" class="btn-cancelar">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 
      <!-- Tabla de asistencias (oculta inicialmente) -->
 <div id="contenedor-asistencias" style="display:none;">
@@ -600,6 +628,7 @@ td {
     </table>
   </div>
 </div>
+
     
    
     
@@ -613,22 +642,26 @@ td {
 
 </body>
 
-
 <script>
 const fechaInput = document.getElementById('fecha_buscar');
 const tabla = document.getElementById('tabla_listados');
 const tbody = tabla.querySelector('tbody');
-const btnExportar = document.getElementById('btn_exportar');
-const btnExportarPDF = document.getElementById('btn_exportar_pdf');
 const inputIdListado = document.getElementById('id_listado');
 const contenedorAsistencias = document.getElementById('contenedor-asistencias');
 const tablaListados = document.getElementById('tabla_listados');
 const tbodyAsistencias = document.querySelector('#tabla_asistencias tbody');
 const tituloListado = document.querySelector('.titulo-listado');
-const formExportar = document.getElementById('form_exportar');
-
 
 let seleccionado = null;
+
+// Variables modal
+const modal = document.getElementById('modalExportar');
+const modalText = document.getElementById('modal-text');
+const btnConfirmar = document.getElementById('confirmarExportar');
+const btnCancelar = document.getElementById('cancelarExportar');
+
+let exportarTipo = null; // "pdf" o "excel"
+let exportarIdListado = null;
 
 // Al cambiar la fecha
 fechaInput.addEventListener('change', () => {
@@ -637,16 +670,13 @@ fechaInput.addEventListener('change', () => {
   // Resetear vista
   contenedorAsistencias.style.display = 'none';
   tablaListados.style.display = 'none';
-  
 
   if (!fecha) {
     tabla.style.display = 'none';
     tbody.innerHTML = '';
-    btnExportar.disabled = true;
-    btnExportarPDF.disabled = true;
+
     inputIdListado.value = '';
-    // Ocultar formulario exportar si no hay selección
-    formExportar.style.display = 'none';
+
     seleccionado = null;
     return;
   }
@@ -659,10 +689,9 @@ fechaInput.addEventListener('change', () => {
       if (data.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No se encontraron listados para esta fecha.</td></tr>';
         tabla.style.display = 'table';
-        btnExportar.disabled = true;
-        btnExportarPDF.disabled = true;
+
         inputIdListado.value = '';
-        formExportar.style.display = 'none';
+
         seleccionado = null;
         return;
       }
@@ -674,6 +703,7 @@ fechaInput.addEventListener('change', () => {
           <td>${listado.empresa}</td>
           <td>${listado.producto}</td>
           <td>${listado.fecha}</td>
+          <td>${listado.encargado}</td>
           <td style="position: relative;">
             <button class="btn-opciones" title="Más opciones">⋮</button>
             <div class="menu-opciones" style="display: none;" data-id-listado="${listado.id}">
@@ -692,20 +722,13 @@ fechaInput.addEventListener('change', () => {
           tr.classList.add('selected');
           seleccionado = tr;
           inputIdListado.value = listado.id;
-          btnExportar.disabled = false;
-          btnExportarPDF.disabled = false;
-          formExportar.style.display = 'block';
-
         });
 
         tbody.appendChild(tr);
       });
 
       tabla.style.display = 'table';
-      // Por defecto no hay selección ni botones activos
-      btnExportar.disabled = true;
-      btnExportarPDF.disabled = true;
-      formExportar.style.display = 'none';
+
       inputIdListado.value = '';
       seleccionado = null;
     })
@@ -713,24 +736,16 @@ fechaInput.addEventListener('change', () => {
       console.error('Error al buscar listados:', err);
       tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Error al cargar los listados.</td></tr>';
       tabla.style.display = 'table';
-      btnExportar.disabled = true;
-      btnExportarPDF.disabled = true;
+
       inputIdListado.value = '';
-      formExportar.style.display = 'none';
+
       seleccionado = null;
     });
 });
 
-// Exportar PDF desde botón general (si se quiere mantener)
-btnExportarPDF.addEventListener('click', () => {
-  const idListado = inputIdListado.value;
-  if (!idListado) return alert('Selecciona un listado primero.');
-  window.open('funcion_exportar_pdf.php?id_listado=' + idListado, '_blank');
-});
-
 // Mostrar asistencias de un listado
 function mostrarAsistencias(idListado) {
-   console.log('Mostrar asistencias para listado:', idListado);
+  console.log('Mostrar asistencias para listado:', idListado);
   fetch('buscar_asistencias_por_listado.php?id_listado=' + idListado)
     .then(res => res.json())
     .then(data => {
@@ -760,18 +775,14 @@ function mostrarAsistencias(idListado) {
       tablaListados.style.display = 'none';
       contenedorAsistencias.style.display = 'block';
       btnVolver.style.display = 'inline-block';
-      formExportar.style.display = 'none';
-      // Ocultar título
-      document.getElementById('header-exportar').classList.add('oculto');
 
+      tituloListado.style.display = 'none';
     })
     .catch(err => {
       console.error('Error al cargar asistencias:', err);
       tbodyAsistencias.innerHTML = '<tr><td colspan="10">Error al cargar asistencias.</td></tr>';
     });
 }
-
-
 
 // Menú desplegable por fila
 document.addEventListener('click', function (e) {
@@ -784,12 +795,10 @@ document.addEventListener('click', function (e) {
   if (e.target.matches('.btn-opciones')) {
     e.stopPropagation();
 
-    // Obtener el botón y su fila
     const btn = e.target;
     const row = btn.closest('tr');
     const idListado = row.querySelector('td').textContent.trim();
 
-    // Crear menú flotante si no existe
     let menu = document.getElementById('menu-flotante');
     if (!menu) {
       menu = document.createElement('div');
@@ -798,16 +807,14 @@ document.addEventListener('click', function (e) {
       document.body.appendChild(menu);
     }
 
-    // Poner el contenido
     menu.innerHTML = `
-  <button class="menu-item exportar-pdf" data-id="${idListado}">Exportar PDF</button>
-  <button class="menu-item exportar-excel" data-id="${idListado}">Exportar Excel</button>
-  <button class="menu-item ver-asistencias" data-id="${idListado}">Ver listados</button>
-`;
+      <button class="menu-item exportar-pdf" data-id="${idListado}">Exportar PDF</button>
+      <button class="menu-item exportar-excel" data-id="${idListado}">Exportar Excel</button>
+      <button class="menu-item ver-asistencias" data-id="${idListado}">Ver listados</button>
+    `;
 
     menu.dataset.idListado = idListado;
 
-    // Posicionar el menú justo debajo del botón
     const rect = btn.getBoundingClientRect();
     menu.style.left = `${rect.left}px`;
     menu.style.top = `${rect.bottom + window.scrollY}px`;
@@ -816,15 +823,22 @@ document.addEventListener('click', function (e) {
 
   // Si se hace clic en una opción del menú
   if (e.target.matches('.menu-item')) {
-  const idListado = e.target.dataset.id;
-
+    const idListado = e.target.dataset.id;
 
     if (e.target.classList.contains('exportar-pdf')) {
-      window.open(`funcion_exportar_pdf.php?id_listado=${idListado}`, '_blank');
+      // Mostrar modal antes de exportar
+      exportarTipo = 'pdf';
+      exportarIdListado = idListado;
+      modalText.textContent = `¿Quieres exportar el listado #${idListado} en PDF?`;
+      modal.style.display = 'flex';
     }
 
     if (e.target.classList.contains('exportar-excel')) {
-      window.open(`funcion_exportar_excel.php?id_listado=${idListado}`, '_blank');
+      // Mostrar modal antes de exportar
+      exportarTipo = 'excel';
+      exportarIdListado = idListado;
+      modalText.textContent = `¿Quieres exportar el listado #${idListado} en Excel?`;
+      modal.style.display = 'flex';
     }
 
     if (e.target.classList.contains('ver-asistencias')) {
@@ -833,61 +847,69 @@ document.addEventListener('click', function (e) {
 
     // Cerrar el menú después de una acción
     const menu = document.getElementById('menu-flotante');
-    menu.style.display = 'none';
+    if(menu) menu.style.display = 'none';
   }
 });
 
-</script>
-
-<script>
-  function toggleMenu() {
-    const menu = document.getElementById('menuDropdown');
-    menu.classList.toggle('show');
+// Botón Confirmar modal
+btnConfirmar.addEventListener('click', () => {
+  if (exportarTipo && exportarIdListado) {
+    let url = '';
+    if (exportarTipo === 'pdf') {
+      url = `funcion_exportar_pdf.php?id_listado=${exportarIdListado}`;
+    } else if (exportarTipo === 'excel') {
+      url = `funcion_exportar_excel.php?id_listado=${exportarIdListado}`;
+    }
+    window.open(url, '_blank');
   }
+  modal.style.display = 'none';
+  exportarTipo = null;
+  exportarIdListado = null;
+});
 
-  // Cierra el menú si haces clic fuera
-  document.addEventListener('click', function (e) {
-    const menu = document.getElementById('menuDropdown');
-    const toggle = document.querySelector('.menu-toggle');
+// Botón Cancelar modal
+btnCancelar.addEventListener('click', () => {
+  modal.style.display = 'none';
+  exportarTipo = null;
+  exportarIdListado = null;
+});
 
-    if (!menu.contains(e.target) && e.target !== toggle) {
-      menu.classList.remove('show');
-    }
+function toggleMenu() {
+  const menu = document.getElementById('menuDropdown');
+  menu.classList.toggle('show');
+}
+
+// Cierra el menú si haces clic fuera
+document.addEventListener('click', function (e) {
+  const menu = document.getElementById('menuDropdown');
+  const toggle = document.querySelector('.menu-toggle');
+
+  if (!menu.contains(e.target) && e.target !== toggle) {
+    menu.classList.remove('show');
+  }
+});
+
+// Cierra el menú al hacer clic en un enlace
+document.querySelectorAll('.menu-dropdown a').forEach(enlace => {
+  enlace.addEventListener('click', () => {
+    document.getElementById('menuDropdown').classList.remove('show');
   });
+});
 
-  // Cierra el menú al hacer clic en un enlace
-  document.querySelectorAll('.menu-dropdown a').forEach(enlace => {
-    enlace.addEventListener('click', () => {
-      document.getElementById('menuDropdown').classList.remove('show');
-    });
-  });
-  
-  const btnVolver = document.getElementById('btn_volver_listados');
+const btnVolver = document.getElementById('btn_volver_listados');
 
-  btnVolver.addEventListener('click', () => {
-    contenedorAsistencias.style.display = 'none';
-    tablaListados.style.display = 'table';
-    btnVolver.style.display = 'none';
+btnVolver.addEventListener('click', () => {
+  contenedorAsistencias.style.display = 'none';
+  tablaListados.style.display = 'table';
+  btnVolver.style.display = 'none';
+  tituloListado.style.display = 'block';
 
-    // Deseleccionar fila seleccionada
-    if (seleccionado) {
-      seleccionado.classList.remove('selected');
-      seleccionado = null;
-    }
-
-    // Limpiar el input de listado seleccionado
-    inputIdListado.value = '';
-
-    // Ocultar y desactivar botones exportar
-    btnExportar.disabled = true;
-    btnExportarPDF.disabled = true;
-
-    // Ocultar el formulario de exportar
-    formExportar.style.display = 'none';
-
-    // Mostrar el título y encabezado exportar
-    document.getElementById('header-exportar').classList.remove('oculto');
-  });
+  if (seleccionado) {
+    seleccionado.classList.remove('selected');
+    seleccionado = null;
+  }
+  inputIdListado.value = '';
+});
 
 </script>
 
