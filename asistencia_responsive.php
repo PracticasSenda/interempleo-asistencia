@@ -319,9 +319,9 @@ include("validar_sesion.php");
     </div>
 
     <div class="menu-dropdown" id="menuDropdown">
-      <a href="gestionar-personal.php?tipo=trabajador&vista=ver_listado">Gestión de trabajadores</a>
+      <a href="gestionar-personal.php?tipo=trabajadores&vista=lista">Gestión de trabajadores</a>
       <?php if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'administrador'): ?>
-        <a href="gestionar-personal.php?tipo=encargado&vista=ver_listado">Gestión de encargados</a>
+        <a href="gestionar-personal.php?tipo=encargados&vista=lista">Gestión de encargados</a>
       <?php endif; ?>
       <a href="exportar_excel_pdf.php">Exportar Excel/PDF</a>
       <a href="cerrar_sesion.php">Cerrar sesión</a>
