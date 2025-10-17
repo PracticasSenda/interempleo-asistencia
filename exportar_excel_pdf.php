@@ -39,7 +39,7 @@ include("validar_sesion.php");
     .barra-superior {
       background-color: var(--color-principal);
       color: white;
-      padding: 1.5rem 8rem;
+      padding: 1.5rem 1.75rem;
       font-size: 1.5rem;
       font-weight: normal;
       text-align: left;
@@ -266,52 +266,6 @@ include("validar_sesion.php");
       color: var(--color-texto);
       user-select: none;
     }
-
-    #btn_exportar {
-      background-color: var(--color-principal);
-      color: white;
-      border: none;
-      border-radius: 4px;
-      font-size: 1rem;
-      padding: 0.6rem 1.2rem;
-      margin-top: 1rem;
-      cursor: pointer;
-      display: block;
-      margin-left: auto;
-      margin-right: auto;
-      transition: background-color 0.3s ease;
-    }
-
-    #btn_exportar:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    #btn_exportar:hover:enabled {
-      background-color: #e65c17;
-    }
-
-    #btn_exportar_pdf {
-      background-color: #e04e2b;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      font-size: 1rem;
-      padding: 0.6rem 1.2rem;
-      margin-top: 1rem;
-      margin-left: 0.5rem;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-    }
-
-    #btn_exportar_pdf:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    #btn_exportar_pdf:hover:enabled {
-      background-color: #c84323;
-    }
     /* Botón + para ver asistencias */
 .btn-ver-asistencias {
   background-color: #ff671d;
@@ -355,9 +309,10 @@ include("validar_sesion.php");
   padding: 0.6rem 1.2rem;
   border: none;
   border-radius: 4px;
-  margin-top: 1rem;
+  margin-bottom: 1rem;
   cursor: pointer;
 }
+
 
 /* Scroll vertical en observaciones */
 td.observaciones {
@@ -389,6 +344,198 @@ td.observaciones {
 #btn_toggle_asistencias:hover {
   opacity: 0.85;
 }
+.btn-opciones {
+  position:relative;
+  width: 40px;          /* Ancho fijo para área clicable amplia */
+  height: 40px;         /* Alto fijo para que sea cuadrado */
+  background-color: transparent;
+  border: none;
+  color: black;
+  font-size: 1.5rem;
+  cursor: pointer;
+  
+  display: inline-flex;           /* Para centrar el contenido */
+  align-items: center;            /* Centrado vertical */
+  justify-content: center;        /* Centrado horizontal */
+  border-radius:30px;
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+  z-index:9999;
+  transition: background-color 0.3s ease, color 0.3s ease, border 0.3s ease;
+}
+.btn-opciones:focus,
+.btn-opciones:active {
+  background-color: black;/* azul */
+  color: white;              /* texto blanco para contraste */
+  outline: none;
+  border:1px solid white;            /* quitar borde por defecto */
+}
+.menu-opciones {
+  position: absolute;
+  top: 100%;
+  left:0;
+  background-color: white;
+  border: 1px solid var(--color-borde);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  border-radius: 4px;
+  z-index: 1000; /* subir bastante para que quede encima */
+  padding: 0.3rem 0;
+  min-width: 160px;
+  max-width:250px;
+}
+
+.menu-item {
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: var(--color-texto);
+}
+
+.menu-item:hover {
+  background-color: #ffe6d1;
+}
+td {
+  position: relative; /* <-- agregar */
+}
+.menu-opciones {
+  position: absolute;
+  background-color: white;
+  border: 1px solid var(--color-borde);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  border-radius: 4px;
+  z-index: 9999;
+  padding: 0.3rem 0;
+  min-width: 160px;
+  display: none;
+  max-width:250px;
+}
+.menu-toggle {
+  font-size: 1.8rem;
+  cursor: pointer;
+  user-select: none;
+  color: white;
+}
+
+.menu-dropdown {
+  display: none;
+  flex-direction: column;
+  position: absolute;
+  top: 70px;
+  left: 1rem;
+  background-color: white;
+  border: 1px solid #ccc;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  padding: 1.5rem;
+  border-radius: 8px;
+  min-width: 240px;
+  font-size: 1.3rem;  /* Aumenta el tamaño de letra */
+}
+
+.menu-dropdown a {
+  padding: 0.75rem 0;               /* Aumenta espacio entre enlaces */
+  color: var(--color-texto);
+  text-decoration: none;
+  border-bottom: 1px solid #eee;
+  font-size: 1.3rem;               /* Más grande aún los links */
+}
+
+.menu-dropdown a:last-child {
+  border-bottom: none;
+}
+
+.menu-dropdown a:hover {
+  color: var(--color-principal);
+  background-color: #f5f5f5;       /* Mejora visibilidad al pasar el mouse */
+  border-radius: 4px;
+  padding-left: 0.5rem;
+}
+
+
+.menu-dropdown.show {
+  display: flex;
+}
+.menu-toggle {
+  margin-left: 0;
+  padding-left: 0;
+}
+
+
+#form_exportar {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0;
+}
+.oculto {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+ /* Modal estilo */
+  #modalExportar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right:0;
+    bottom:0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+  }
+  #modalExportar .modal-content {
+    background: white;
+    padding: 1.5rem 2rem;
+    border-radius: 8px;
+    width: 300px;
+    text-align: center;
+    font-family: Arial, sans-serif;
+  }
+  #modalExportar p {
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+    color: #FF671D; /* naranja principal */
+    font-weight: bold;
+  }
+  #modalExportar .modal-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+  }
+  #modalExportar button {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1rem;
+  }
+  .btn-confirmar {
+    background-color: #FF671D;
+    color: white;
+  }
+  .btn-confirmar:hover {
+    background-color: #e65a00;
+  }
+  .btn-cancelar {
+    background-color: #ddd;
+    color: #333;
+  }
+  .btn-cancelar:hover {
+    background-color: #bbb;
+  }
+
+
+
+
+
+
 
 
   </style>
@@ -397,19 +544,38 @@ td.observaciones {
 
 <body>
 
+
   <div class="barra-superior">
-    <p><span>Interempleo</span> - exportar</p>
-    <a href="asistencia_responsive.php" class="btn-volver">Volver a asistencias</a>
+    <!-- Botón de menú + título central -->
+  <div style="display: flex; align-items: center; gap: 1rem;">
+  <div class="menu-toggle" onclick="toggleMenu()">☰</div>
+  <p style="margin: 0;"><span>Inter</span>empleo - Exportar</p>
   </div>
+  </div>
+
+  <!-- Dropdown del menú -->
+<div class="menu-dropdown" id="menuDropdown">
+
+<?php if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'administrador'): ?>
+  <a href="gestionar-personal.php?tipo=encargado&vista=ver_listado">Gestión de encargados</a>
+<?php endif; ?>  
+<a href="gestionar-personal.php?tipo=trabajador&vista=ver_listado">Gestión de trabajadores</a>
+  <a href="asistencia_responsive.php">Parte de asistencia</a>
+  <a href="cerrar_sesion.php">Cerrar sesión</a>
+</div>
+
 
   <div class="contenedor-central">
 
     <form id="form-buscar" method="GET" action="buscar_listado_por_fecha.php">
       <label for="fecha_buscar">Buscar listados por fecha:</label>
       <input type="date" id="fecha_buscar" name="fecha" required />
+      <input type="hidden" id="id_listado" name="id_listado" />
+
     </form>
 
     <h2 class="titulo-listado">Selecciona un listado</h2>
+
 
     <table id="tabla_listados" style="display:none;">
       <thead>
@@ -418,13 +584,29 @@ td.observaciones {
           <th>Empresa</th>
           <th>Producto</th>
           <th>Fecha</th>
+          <th>Encargado</th>
+
+          <th>Opciones</th>
         </tr>
       </thead>
       <tbody></tbody>
     </table>
 
+    <!-- MODAL para confirmación de exportar -->
+<div id="modalExportar" style="display:none;">
+  <div class="modal-content">
+    <p id="modal-text">¿Quieres exportar este listado?</p>
+    <div class="modal-buttons">
+      <button id="confirmarExportar" class="btn-confirmar">Confirmar</button>
+      <button id="cancelarExportar" class="btn-cancelar">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+
      <!-- Tabla de asistencias (oculta inicialmente) -->
 <div id="contenedor-asistencias" style="display:none;">
+  <button id="btn_volver_listados" style="display: none;">← Volver a listados</button>
   <h2 class="titulo-listado">Asistencias del listado</h2>
   <div style="overflow-x: auto;">
     <table id="tabla_asistencias">
@@ -446,17 +628,12 @@ td.observaciones {
     </table>
   </div>
 </div>
+
     
-    <!-- Botón fijo + para ver asistencias -->
-    <button id="btn_toggle_asistencias" style="display: none;">+</button>
+   
+    
 
 
-
-    <form id="form_exportar" method="get" action="funcion_exportar_excel.php" target="_blank">
-      <input type="hidden" name="id_listado" id="id_listado" />
-      <button type="submit" id="btn_exportar" disabled>Exportar listado seleccionado a Excel</button>
-      <button type="button" id="btn_exportar_pdf" disabled>Exportar a PDF</button>
-    </form>
 
    
 
@@ -465,42 +642,42 @@ td.observaciones {
 
 </body>
 
-
 <script>
-  const fechaInput = document.getElementById('fecha_buscar');
+const fechaInput = document.getElementById('fecha_buscar');
 const tabla = document.getElementById('tabla_listados');
 const tbody = tabla.querySelector('tbody');
-const btnExportar = document.getElementById('btn_exportar');
-const btnExportarPDF = document.getElementById('btn_exportar_pdf');
 const inputIdListado = document.getElementById('id_listado');
-const btnToggle = document.getElementById('btn_toggle_asistencias');
 const contenedorAsistencias = document.getElementById('contenedor-asistencias');
 const tablaListados = document.getElementById('tabla_listados');
 const tbodyAsistencias = document.querySelector('#tabla_asistencias tbody');
+const tituloListado = document.querySelector('.titulo-listado');
 
 let seleccionado = null;
+
+// Variables modal
+const modal = document.getElementById('modalExportar');
+const modalText = document.getElementById('modal-text');
+const btnConfirmar = document.getElementById('confirmarExportar');
+const btnCancelar = document.getElementById('cancelarExportar');
+
+let exportarTipo = null; // "pdf" o "excel"
+let exportarIdListado = null;
 
 // Al cambiar la fecha
 fechaInput.addEventListener('change', () => {
   const fecha = fechaInput.value;
 
-  // Cerrar asistencias y ocultar botón al cambiar fecha
+  // Resetear vista
   contenedorAsistencias.style.display = 'none';
   tablaListados.style.display = 'none';
-  btnToggle.style.display = 'none';
-  btnToggle.textContent = '+';
-  btnToggle.setAttribute('data-mode', 'ver');
-  btnToggle.classList.remove('volver');
-  btnToggle.classList.add('ver');
-  btnToggle.removeAttribute('data-id');
-  btnToggle.setAttribute('title', '');
 
   if (!fecha) {
     tabla.style.display = 'none';
     tbody.innerHTML = '';
-    btnExportar.disabled = true;
-    btnExportarPDF.disabled = true;
+
     inputIdListado.value = '';
+
+    seleccionado = null;
     return;
   }
 
@@ -510,11 +687,12 @@ fechaInput.addEventListener('change', () => {
       tbody.innerHTML = '';
 
       if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No se encontraron listados para esta fecha.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No se encontraron listados para esta fecha.</td></tr>';
         tabla.style.display = 'table';
-        btnExportar.disabled = true;
-        btnExportarPDF.disabled = true;
+
         inputIdListado.value = '';
+
+        seleccionado = null;
         return;
       }
 
@@ -525,6 +703,15 @@ fechaInput.addEventListener('change', () => {
           <td>${listado.empresa}</td>
           <td>${listado.producto}</td>
           <td>${listado.fecha}</td>
+          <td>${listado.encargado}</td>
+          <td style="position: relative;">
+            <button class="btn-opciones" title="Más opciones">⋮</button>
+            <div class="menu-opciones" style="display: none;" data-id-listado="${listado.id}">
+              <button class="menu-item exportar-pdf">Exportar PDF</button>
+              <button class="menu-item exportar-excel">Exportar Excel</button>
+              <button class="menu-item ver-asistencias">Ver asistencias</button>
+            </div>
+          </td>
         `;
 
         tr.addEventListener('click', () => {
@@ -535,44 +722,30 @@ fechaInput.addEventListener('change', () => {
           tr.classList.add('selected');
           seleccionado = tr;
           inputIdListado.value = listado.id;
-          btnExportar.disabled = false;
-          btnExportarPDF.disabled = false;
-
-          // Mostrar botón + y configurarlo para el listado seleccionado
-          btnToggle.style.display = 'inline-block';
-          btnToggle.setAttribute('data-id', listado.id);
-          btnToggle.setAttribute('data-mode', 'ver');
-          btnToggle.textContent = '+';
-          btnToggle.classList.remove('volver');
-          btnToggle.classList.add('ver');
-          btnToggle.setAttribute('title', 'Ver asistencias');
         });
 
         tbody.appendChild(tr);
       });
 
       tabla.style.display = 'table';
+
+      inputIdListado.value = '';
+      seleccionado = null;
     })
     .catch(err => {
       console.error('Error al buscar listados:', err);
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Error al cargar los listados.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Error al cargar los listados.</td></tr>';
       tabla.style.display = 'table';
-      btnExportar.disabled = true;
-      btnExportarPDF.disabled = true;
+
       inputIdListado.value = '';
+
+      seleccionado = null;
     });
 });
 
-// Exportar PDF
-btnExportarPDF.addEventListener('click', () => {
-  const idListado = inputIdListado.value;
-  if (!idListado) return alert('Selecciona un listado primero.');
-
-  window.open('funcion_exportar_pdf.php?id_listado=' + idListado, '_blank');
-});
-
-// Mostrar asistencias
+// Mostrar asistencias de un listado
 function mostrarAsistencias(idListado) {
+  console.log('Mostrar asistencias para listado:', idListado);
   fetch('buscar_asistencias_por_listado.php?id_listado=' + idListado)
     .then(res => res.json())
     .then(data => {
@@ -601,6 +774,9 @@ function mostrarAsistencias(idListado) {
 
       tablaListados.style.display = 'none';
       contenedorAsistencias.style.display = 'block';
+      btnVolver.style.display = 'inline-block';
+
+      tituloListado.style.display = 'none';
     })
     .catch(err => {
       console.error('Error al cargar asistencias:', err);
@@ -608,36 +784,135 @@ function mostrarAsistencias(idListado) {
     });
 }
 
-// Botón toggle para mostrar/ocultar asistencias
-btnToggle.addEventListener('click', () => {
-  const modo = btnToggle.getAttribute('data-mode');
-  const idListado = btnToggle.getAttribute('data-id');
+// Menú desplegable por fila
+document.addEventListener('click', function (e) {
+  // Cerrar cualquier menú abierto
+  document.querySelectorAll('.menu-opciones').forEach(menu => {
+    menu.style.display = 'none';
+  });
 
-  if (modo === 'ver') {
-    if (!idListado) {
-      alert('No se ha seleccionado ningún listado.');
-      return;
+  // Si se hace clic en el botón de opciones (⋮)
+  if (e.target.matches('.btn-opciones')) {
+    e.stopPropagation();
+
+    const btn = e.target;
+    const row = btn.closest('tr');
+    const idListado = row.querySelector('td').textContent.trim();
+
+    let menu = document.getElementById('menu-flotante');
+    if (!menu) {
+      menu = document.createElement('div');
+      menu.id = 'menu-flotante';
+      menu.className = 'menu-opciones';
+      document.body.appendChild(menu);
     }
 
-    mostrarAsistencias(idListado);
-    btnToggle.textContent = '−';
-    btnToggle.classList.remove('ver');
-    btnToggle.classList.add('volver');
-    btnToggle.setAttribute('data-mode', 'volver');
-    btnToggle.setAttribute('title', 'Ver listados');
-  } else {
-    contenedorAsistencias.style.display = 'none';
-    tablaListados.style.display = 'table';
-    btnToggle.textContent = '+';
-    btnToggle.classList.remove('volver');
-    btnToggle.classList.add('ver');
-    btnToggle.setAttribute('data-mode', 'ver');
-    btnToggle.setAttribute('title', 'Ver asistencias');
+    menu.innerHTML = `
+      <button class="menu-item exportar-pdf" data-id="${idListado}">Exportar PDF</button>
+      <button class="menu-item exportar-excel" data-id="${idListado}">Exportar Excel</button>
+      <button class="menu-item ver-asistencias" data-id="${idListado}">Ver listados</button>
+    `;
+
+    menu.dataset.idListado = idListado;
+
+    const rect = btn.getBoundingClientRect();
+    menu.style.left = `${rect.left}px`;
+    menu.style.top = `${rect.bottom + window.scrollY}px`;
+    menu.style.display = 'block';
+  }
+
+  // Si se hace clic en una opción del menú
+  if (e.target.matches('.menu-item')) {
+    const idListado = e.target.dataset.id;
+
+    if (e.target.classList.contains('exportar-pdf')) {
+      // Mostrar modal antes de exportar
+      exportarTipo = 'pdf';
+      exportarIdListado = idListado;
+      modalText.textContent = `¿Quieres exportar el listado #${idListado} en PDF?`;
+      modal.style.display = 'flex';
+    }
+
+    if (e.target.classList.contains('exportar-excel')) {
+      // Mostrar modal antes de exportar
+      exportarTipo = 'excel';
+      exportarIdListado = idListado;
+      modalText.textContent = `¿Quieres exportar el listado #${idListado} en Excel?`;
+      modal.style.display = 'flex';
+    }
+
+    if (e.target.classList.contains('ver-asistencias')) {
+      mostrarAsistencias(idListado);
+    }
+
+    // Cerrar el menú después de una acción
+    const menu = document.getElementById('menu-flotante');
+    if(menu) menu.style.display = 'none';
   }
 });
 
+// Botón Confirmar modal
+btnConfirmar.addEventListener('click', () => {
+  if (exportarTipo && exportarIdListado) {
+    let url = '';
+    if (exportarTipo === 'pdf') {
+      url = `funcion_exportar_pdf.php?id_listado=${exportarIdListado}`;
+    } else if (exportarTipo === 'excel') {
+      url = `funcion_exportar_excel.php?id_listado=${exportarIdListado}`;
+    }
+    window.open(url, '_blank');
+  }
+  modal.style.display = 'none';
+  exportarTipo = null;
+  exportarIdListado = null;
+});
+
+// Botón Cancelar modal
+btnCancelar.addEventListener('click', () => {
+  modal.style.display = 'none';
+  exportarTipo = null;
+  exportarIdListado = null;
+});
+
+function toggleMenu() {
+  const menu = document.getElementById('menuDropdown');
+  menu.classList.toggle('show');
+}
+
+// Cierra el menú si haces clic fuera
+document.addEventListener('click', function (e) {
+  const menu = document.getElementById('menuDropdown');
+  const toggle = document.querySelector('.menu-toggle');
+
+  if (!menu.contains(e.target) && e.target !== toggle) {
+    menu.classList.remove('show');
+  }
+});
+
+// Cierra el menú al hacer clic en un enlace
+document.querySelectorAll('.menu-dropdown a').forEach(enlace => {
+  enlace.addEventListener('click', () => {
+    document.getElementById('menuDropdown').classList.remove('show');
+  });
+});
+
+const btnVolver = document.getElementById('btn_volver_listados');
+
+btnVolver.addEventListener('click', () => {
+  contenedorAsistencias.style.display = 'none';
+  tablaListados.style.display = 'table';
+  btnVolver.style.display = 'none';
+  tituloListado.style.display = 'block';
+
+  if (seleccionado) {
+    seleccionado.classList.remove('selected');
+    seleccionado = null;
+  }
+  inputIdListado.value = '';
+});
 
 </script>
+
 
 </body>
 
