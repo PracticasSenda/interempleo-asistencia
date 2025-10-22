@@ -957,7 +957,7 @@ btnVolver.addEventListener('click', () => {
 
 </script>
 
-
+<?php include("footer.php");?>
 </body>
 
 </html>

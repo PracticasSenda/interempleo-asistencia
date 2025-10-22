@@ -41,12 +41,12 @@ $tipo = $_GET['tipo'] ?? '';
 
         <a href="asistencia_responsive.php"
            class="<?= ($pagina_actual === 'asistencia_responsive.php') ? 'activo' : '' ?>">
-           Parte de asistencias
+           Nuevas asistencias
         </a>
 
         <a href="exportar_excel_pdf.php"
            class="<?= ($pagina_actual === 'exportar_excel_pdf.php') ? 'activo' : '' ?>">
-           Gestionar listados
+           Gestionar asistencias
         </a>
 
         <a href="cerrar_sesion.php">Cerrar sesión</a>
