@@ -61,7 +61,7 @@ if (isset($_POST['enviar'])) {
 
     // Si no quiere mantener sesión, se crea una cookie temporal de 1 minuto
     if ($sesion === "no") {
-        setcookie("sesion_temporal", "1", time() + 60, "/");
+        setcookie("sesion_temporal", "1", time() + 300, "/");
     } else {
         // Si se marcó que sí, eliminamos cualquier cookie anterior
         if (isset($_COOKIE["sesion_temporal"])) {
