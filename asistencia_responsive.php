@@ -676,7 +676,7 @@ include("validar_sesion.php");
     });
   </script>
 
-
+  <?php include("footer.php");?>
 </body>
 
 </html>

@@ -100,45 +100,41 @@ class PDF extends FPDF
     $fill = false;
 
     foreach ($data as $row) {
-        $x = $this->GetX();
-        $y = $this->GetY();
+    $fields = [
+        utf8_decode($row['empresa']),
+        utf8_decode($row['fecha']),
+        utf8_decode($row['producto']),
+        utf8_decode($row['asistencia']),
+        utf8_decode($row['nombre_trabajador']),
+        utf8_decode($row['dni']),
+        utf8_decode($row['bandeja']),
+        utf8_decode($row['horas']),
+        utf8_decode($row['observaciones']),
+    ];
 
-        $fields = [
-            utf8_decode($row['empresa']),
-            utf8_decode($row['fecha']),
-            utf8_decode($row['producto']),
-            utf8_decode($row['asistencia']),
-            utf8_decode($row['nombre_trabajador']),
-            utf8_decode($row['dni']),
-            utf8_decode($row['bandeja']),
-            utf8_decode($row['horas']),
-            utf8_decode($row['observaciones']),
-        ];
-
-        // 🔸 1. Calculamos la altura necesaria para CADA CELDA
-        $nbLines = [];
-        foreach ($fields as $i => $text) {
-            $nbLines[] = $this->NbLines($w[$i], $text);
-        }
-
-        // 🔸 2. Calculamos la altura máxima de la fila
-        $maxNbLines = max($nbLines);
-        $h = 5 * $maxNbLines;
-
-        // 🔸 3. Dibujamos cada celda (usando MultiCell)
-        for ($i = 0; $i < count($fields); $i++) {
-            $x = $this->GetX();
-            $y = $this->GetY();
-            $this->MultiCell($w[$i], 5, $fields[$i], 1, 'C', $fill);
-
-            // 🔸 4. Mover cursor a la derecha, al inicio de la siguiente celda
-            $this->SetXY($x + $w[$i], $y);
-        }
-
-        // 🔸 5. Bajar al inicio de la siguiente fila
-        $this->Ln($h);
-        $fill = !$fill;
+    // 1️⃣ Calculamos la altura máxima de la fila
+    $nbLines = [];
+    foreach ($fields as $i => $text) {
+        $nbLines[] = $this->NbLines($w[$i], $text);
     }
+    $maxNbLines = max($nbLines);
+    $h = 5 * $maxNbLines;
+
+    // 2️⃣ Guardamos posición inicial de la fila
+    $yStart = $this->GetY();
+
+    // 3️⃣ Dibujamos cada celda
+    for ($i = 0; $i < count($fields); $i++) {
+        $x = $this->GetX();
+        $this->MultiCell($w[$i], $h / $nbLines[$i], $fields[$i], 1, 'C', $fill);
+        $this->SetXY($x + $w[$i], $yStart);
+    }
+
+    // 4️⃣ Avanzamos a la siguiente fila
+    $this->Ln($h);
+    $fill = !$fill;
+}
+
 
     $this->Cell(array_sum($w), 0, '', 'T');
     $this->Ln(2);

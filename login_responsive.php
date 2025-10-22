@@ -255,7 +255,7 @@ if (isset($_POST['enviar'])) {
 
   <!-- BANDA NARANJA CON "Interempleo" -->
   <div class="barra-superior">
-    <p style="color:white;"><span>Inter</span>empleo</p>
+    <p style="color:white; font-size:23px;"><span>Inter</span>empleo</p>
   </div>
 
   <!-- FORMULARIO CENTRADO -->
@@ -293,6 +293,8 @@ if (isset($_POST['enviar'])) {
     toggle.textContent = isPassword ? "🙈" : "👁️"; // cambia el icono
   }
 </script>
+
+<?php include("footer.php");?>
 
 </body>
 </html>
