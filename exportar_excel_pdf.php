@@ -657,7 +657,8 @@ td {
       <thead>
         <tr>
           <th>ID</th>
-          <th>Trabajador</th>
+          <th>Nombre</th>
+          <th>Apellidos</th>
           <th>DNI</th>
           <th>Asistencia</th>
           <th>Empresa</th>
@@ -802,7 +803,8 @@ function mostrarAsistencias(idListado) {
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td>${asistencia.id}</td>
-            <td>${asistencia.nombre} ${asistencia.apellidos}</td>
+            <td>${asistencia.nombre} </td>
+            <td>${asistencia.apellidos}</td>
             <td>${asistencia.dni}</td>
             <td>${asistencia.asistencia}</td>
             <td>${asistencia.empresa}</td>

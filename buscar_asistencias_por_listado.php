@@ -39,7 +39,19 @@ $result = $stmt->get_result();
 $asistencias = [];
 
 while ($row = $result->fetch_assoc()) {
-    $asistencias[] = $row;
+    $asistencias[] = [
+        'id' => $row['id'],
+        'nombre' => $row['nombre'],
+        'apellidos' => $row['apellidos'], // <--- importante
+        'dni' => $row['dni'],
+        'asistencia' => $row['asistencia'],
+        'empresa' => $row['empresa'],
+        'fecha' => $row['fecha'],
+        'producto' => $row['producto'],
+        'Bandeja' => $row['Bandeja'],
+        'Horas' => $row['Horas'],
+        'Observaciones' => $row['Observaciones']
+    ];
 }
 
 echo json_encode($asistencias);
