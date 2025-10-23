@@ -1,6 +1,6 @@
 <?php
 header('Content-Type: application/json');
-include("conexion_bd.php");
+include("db.php");
 include("validar_sesion.php"); // Solo para los que lo necesitan
 
 $accion = $_GET['accion'] ?? '';
