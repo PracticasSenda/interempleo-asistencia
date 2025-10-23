@@ -1,6 +1,6 @@
 <?php
 header("Content-Type: application/json");
-include("conexion_bd.php");
+include("db.php");
 
 $query = isset($_GET['query']) ? trim($_GET['query']) : '';
 

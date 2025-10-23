@@ -1,5 +1,5 @@
 <?php
-include("conexion_bd.php");
+include("db.php");
 
 // Verifica si la conexión es válida
 if (!$conexion) {

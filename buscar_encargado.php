@@ -1,5 +1,5 @@
 <?php
-include("conexion_bd.php");
+include("db.php");
 
 $term = $_GET['term'] ?? '';
 $term = mysqli_real_escape_string($conexion, $term);

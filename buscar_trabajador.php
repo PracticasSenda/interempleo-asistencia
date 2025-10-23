@@ -1,7 +1,7 @@
 <?php
 header('Content-Type: application/json');
 include("validar_sesion.php");
-include("conexion_bd.php");
+include("db.php");
 
 if (!isset($_GET['dni']) || empty(trim($_GET['dni']))) {
     echo json_encode(['error' => 'No se proporcionó DNI']);

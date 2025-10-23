@@ -1,5 +1,5 @@
 <?php
-include("conexion_bd.php");
+include("db.php");
 
 if (!isset($_GET['term'])) {
     echo json_encode([]);

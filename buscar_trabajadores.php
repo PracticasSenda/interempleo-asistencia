@@ -1,5 +1,5 @@
 <?php
-include("conexion_bd.php");
+include("db.php");
 
 $termino = isset($_GET['q']) ? mysqli_real_escape_string($conexion, $_GET['q']) : '';
 

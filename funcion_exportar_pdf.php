@@ -1,6 +1,6 @@
 <?php
 session_start(); // para mostrar nombre del encargado si está logueado
-include("conexion_bd.php");
+include("db.php");
 
 if (!isset($_GET['id_listado']) || empty($_GET['id_listado'])) {
     die("ID de listado no especificado");

@@ -1,6 +1,6 @@
 <?php
 require 'vendor/autoload.php'; // Carga PhpSpreadsheet
-include("conexion_bd.php");
+include("db.php");
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;

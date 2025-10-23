@@ -3,7 +3,7 @@
 // 🔸 Control de acceso y configuración base
 // ===============================================
 include("validar_sesion.php");
-include("conexion_bd.php");
+include("db.php");
 include("csrf.php");
 
 // Bandera de seguridad para las funciones

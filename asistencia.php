@@ -489,7 +489,7 @@ include("validar_sesion.php");
 
   <?php
   if (isset($_POST['enviar'])) {
-    include("conexion_bd.php");
+    include("db.php");
 
     // Paso 1: Validar y limpiar los datos generales
     $empresa = mysqli_real_escape_string($conexion, strip_tags($_POST['empresa']));
