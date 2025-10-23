@@ -275,7 +275,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
 
         <div style="margin-top: 20px;">
-            <a href="login_responsive.php" style="color: var(--color-principal); text-decoration: none;">← Volver al login</a>
+            <a href="login.php" style="color: var(--color-principal); text-decoration: none;">← Volver al login</a>
         </div>
 
         <hr>
