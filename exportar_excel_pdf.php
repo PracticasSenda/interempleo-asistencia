@@ -726,7 +726,7 @@ fechaInput.addEventListener('change', () => {
     return;
   }
 
-  fetch('/interempleo-asistencia/ajax_unificado.php?accion=buscar_listados_por_fecha&fecha=' + fecha)
+  fetch('/interempleo-asistencia/funciones_buscar.php?accion=buscar_listados_por_fecha&fecha=' + fecha)
     .then(res => res.json())
     .then(data => {
       tbody.innerHTML = '';
@@ -791,7 +791,7 @@ fechaInput.addEventListener('change', () => {
 // Mostrar asistencias de un listado
 function mostrarAsistencias(idListado) {
   console.log('Mostrar asistencias para listado:', idListado);
-  fetch('/interempleo-asistencia/ajax_unificado.php?accion=buscar_asistencias_por_listado&id_listado=' + idListado)
+  fetch('/interempleo-asistencia/funciones_buscar.php?accion=buscar_asistencias_por_listado&id_listado=' + idListado)
     .then(res => res.json())
     .then(data => {
       tbodyAsistencias.innerHTML = '';
