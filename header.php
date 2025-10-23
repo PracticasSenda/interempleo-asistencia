@@ -6,7 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 $rol = $_SESSION['rol'] ?? '';
 $nombre = $_SESSION['nombre'] ?? '';
 $apellidos = $_SESSION['apellidos'] ?? '';
-$nombre_completo = trim("$nombre $apellidos");
+$nombre_completo = trim("$nombre ");
 
 // Detectar página actual (para marcar en naranja el menú activo)
 $pagina_actual = basename($_SERVER['PHP_SELF']);

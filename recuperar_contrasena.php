@@ -1,3 +1,4 @@
+
 <?php
 session_start();
 require __DIR__ . '/vendor/autoload.php';
@@ -38,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 mysqli_query($conexion, $insert);
 
                 // Crear enlace de cambio de contraseña
-                $link = "http://localhost/interempleo-asistencia/cambiar_contrasena.php?token=$token"; // // CAMBIAR URL si es otra
+                $link = "http://localhost/interempleo-asistencia/cambiar_contrasena_responsive.php?token=$token"; // // CAMBIAR URL si es otra
 
                 // Enviar correo con PHPMailer
                 $mail = new PHPMailer(true);
@@ -72,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <hr>
     <p style='font-size:12px;color:#777;'>© Interempleo - Sistema de recuperación de acceso</p>
 </body>
-</html
+
 ";
 
 
@@ -263,7 +264,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="contenido">
         <h2>¿Olvidaste tu contraseña?</h2>
-        <p>Como encargado, introduce tu DNI y correo electrónico para restablecer tu contraseña.</p>
+        <p>Introduce tu DNI y correo electrónico para restablecer tu contraseña.</p>
 
         <form method="post" action="">
             <label for="dni">DNI: </label>
@@ -274,7 +275,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
 
         <div style="margin-top: 20px;">
-            <a href="login.php" style="color: var(--color-principal); text-decoration: none;">← Volver al login</a>
+            <a href="login_responsive.php" style="color: var(--color-principal); text-decoration: none;">← Volver al login</a>
         </div>
 
         <hr>
@@ -283,5 +284,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <?php include("footer.php"); ?>
 </body>
+
 
 </html>
