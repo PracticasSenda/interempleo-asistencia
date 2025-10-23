@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <hr>
     <p style='font-size:12px;color:#777;'>© Interempleo - Sistema de recuperación de acceso</p>
 </body>
-</html
+
 ";
 
 
