@@ -6,7 +6,7 @@ if (isset($_SESSION['nombre'])) {
     exit();
 }
 
-include("conexion_bd.php");
+include("db.php");
 include("funciones.php");
 
 $error = "";

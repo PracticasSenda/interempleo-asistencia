@@ -2,7 +2,7 @@
 <?php
 session_start();
 require __DIR__ . '/vendor/autoload.php';
-include("conexion_bd.php"); // Conexión a la BD
+include("db.php"); // Conexión a la BD
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
