@@ -726,7 +726,7 @@ fechaInput.addEventListener('change', () => {
     return;
   }
 
-  fetch('buscar_listados_por_fecha.php?fecha=' + fecha)
+  fetch('ajax_unificado.php?accion=buscar_listados_por_fecha&fecha=' + fecha)
     .then(res => res.json())
     .then(data => {
       tbody.innerHTML = '';
@@ -791,7 +791,7 @@ fechaInput.addEventListener('change', () => {
 // Mostrar asistencias de un listado
 function mostrarAsistencias(idListado) {
   console.log('Mostrar asistencias para listado:', idListado);
-  fetch('buscar_asistencias_por_listado.php?id_listado=' + idListado)
+  fetch('ajax_unificado.php?accion=buscar_asistencias_por_listado&id_listado=' + idListado)
     .then(res => res.json())
     .then(data => {
       tbodyAsistencias.innerHTML = '';

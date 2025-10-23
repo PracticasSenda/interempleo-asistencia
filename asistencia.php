@@ -429,7 +429,7 @@ include("validar_sesion.php");
       }
 
       // Petición AJAX al servidor para obtener datos del trabajador
-      fetch('buscar_trabajador.php?dni=' + encodeURIComponent(dni))
+      fetch('ajax_unificado.php?accion=buscar_trabajador&dni=' + encodeURIComponent(dni))
         .then(response => response.json())
         .then(data => {
           if (data.error) {
@@ -569,7 +569,7 @@ include("validar_sesion.php");
         return;
       }
 
-      fetch('buscar_sugerencias.php?term=' + encodeURIComponent(texto))
+      fetch('ajax_unificado.php?accion=buscar_sugerencias&term=' + encodeURIComponent(texto))
         .then(res => res.json())
         .then(data => {
           contenedorSugerencias.innerHTML = '';
@@ -620,7 +620,7 @@ include("validar_sesion.php");
         return;
       }
 
-      fetch('buscar_encargado.php?term=' + encodeURIComponent(texto))
+      fetch('ajax_unificado.php?accion=buscar_encargado&term=' + encodeURIComponent(texto))
         .then(res => res.json())
         .then(data => {
           contenedorEncargado.innerHTML = '';
