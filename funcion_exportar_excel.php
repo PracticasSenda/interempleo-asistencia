@@ -15,7 +15,9 @@ if (!isset($_GET['id_listado']) || empty($_GET['id_listado'])) {
 $id_listado = intval($_GET['id_listado']);
 
 // Consulta para obtener datos de asistencias según el listado
-$sql = "SELECT a.id, a.empresa, a.fecha, a.producto, a.asistencia, t.nombre AS nombre_trabajador, a.dni, a.bandeja, a.horas, a.observaciones
+$sql = "SELECT a.id, a.empresa, a.fecha, a.producto, a.asistencia, 
+        CONCAT(t.nombre, ' ', t.apellidos) AS nombre_trabajador,
+        a.dni, a.bandeja, a.horas, a.observaciones
         FROM asistencias a
         JOIN trabajadores t ON a.id_trabajador = t.id
         WHERE a.id_listado = $id_listado";

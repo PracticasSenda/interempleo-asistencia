@@ -65,9 +65,40 @@ h2 { color: var(--color-principal); margin-bottom: 15px; font-size: 24px; }
 p { color: var(--color-texto); margin-bottom: 25px; font-size: 16px; }
 form { display: flex; flex-direction: column; gap: 15px; align-items: stretch; position: relative; }
 label { text-align: left; font-size: 16px; color: var(--color-texto); }
-.input-container { position: relative; }
-input[type="password"] { padding: 12px; border: 1px solid var(--color-borde); border-radius: 4px; font-size: 16px; background-color: var(--color-input-bg); width: 100%; }
-.toggle-password { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 18px; user-select: none; }
+.input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-container input[type="password"],
+.input-container input[type="text"] {
+    width: 100%;
+    padding: 12px 40px 12px 12px; /* espacio para el icono a la derecha */
+    border: 1px solid var(--color-borde);
+    border-radius: 4px;
+    font-size: 16px;
+    background-color: var(--color-input-bg);
+    color: var(--color-texto);
+    font-family: inherit;
+    outline: none;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 10px;
+    cursor: pointer;
+    font-size: 20px;
+    user-select: none;
+    color: #555;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    top: 0; /* Alinea perfectamente en todo el alto del input */
+}
+
+
 button { padding: 14px; background-color: var(--color-principal); color: white; border: none; border-radius: 4px; font-size: 17px; cursor: pointer; width: 100%; }
 button:hover { background-color: #e65c17; }
 a { font-size: 15px; color: var(--color-principal); text-decoration: none; }

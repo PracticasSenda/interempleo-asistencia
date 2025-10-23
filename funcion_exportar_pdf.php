@@ -25,7 +25,8 @@ if ($result_encargado && mysqli_num_rows($result_encargado) > 0) {
 
 // Consulta de datos
 $sql = "SELECT a.id, a.empresa, a.fecha, a.producto, a.asistencia,
-               t.nombre AS nombre_trabajador, a.dni, a.bandeja, a.horas, a.observaciones
+               CONCAT(t.nombre, ' ', t.apellidos) AS nombre_trabajador,
+               a.dni, a.bandeja, a.horas, a.observaciones
         FROM asistencias a
         JOIN trabajadores t ON a.id_trabajador = t.id
         WHERE a.id_listado = $id_listado";
