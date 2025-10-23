@@ -604,7 +604,7 @@ td {
   <a href="gestionar-personal.php?tipo=encargado&vista=ver_listado">Gestión de encargados</a>
 <?php endif; ?>  
 <a href="gestionar-personal.php?tipo=trabajador&vista=ver_listado">Gestión de trabajadores</a>
-  <a href="asistencia_responsive.php">Parte de asistencia</a>
+  <a href="asistencia.php">Parte de asistencia</a>
   <a href="cerrar_sesion.php">Cerrar sesión</a>
 </div>
 

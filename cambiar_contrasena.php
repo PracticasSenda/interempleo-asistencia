@@ -24,7 +24,7 @@ if (isset($_GET['token'])) {
                 $delete = "DELETE FROM tokens WHERE token='$token'";
                 mysqli_query($conexion, $delete);
 
-                $mensaje = "<p style='color:green; text-align:center;'>✅ Contraseña cambiada correctamente. Puedes <a href='login_responsive.php'>iniciar sesión</a>.</p>";
+                $mensaje = "<p style='color:green; text-align:center;'>✅ Contraseña cambiada correctamente. Puedes <a href='login.php'>iniciar sesión</a>.</p>";
             } else {
                 $mensaje = "<p style='color:red; text-align:center;'>❌ Las contraseñas no coinciden.</p>";
             }

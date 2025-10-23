@@ -3,7 +3,7 @@ session_start();
 
 // Si no hay sesión iniciada, redirigir al login
 if (!isset($_SESSION['nombre'])) {
-    header("Location: login_responsive.php");
+    header("Location: login.php");
     exit();
 }
 
@@ -15,7 +15,7 @@ if (
 ) {
     session_unset();
     session_destroy();
-    header("Location: login_responsive.php");
+    header("Location: login.php");
     exit();
 }
 ?>

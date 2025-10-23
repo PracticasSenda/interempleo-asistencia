@@ -8,5 +8,5 @@ if (isset($_COOKIE["sesion_temporal"])) {
     setcookie("sesion_temporal", "", time() - 3600, "/");
 }
 
-header("Location: login_responsive.php");
+header("Location: login.php");
 exit();

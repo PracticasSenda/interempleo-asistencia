@@ -39,8 +39,8 @@ $tipo = $_GET['tipo'] ?? '';
             </a>
         <?php endif; ?>
 
-        <a href="asistencia_responsive.php"
-           class="<?= ($pagina_actual === 'asistencia_responsive.php') ? 'activo' : '' ?>">
+        <a href="asistencia.php"
+           class="<?= ($pagina_actual === 'asistencia.php') ? 'activo' : '' ?>">
            Nuevas asistencias
         </a>
 

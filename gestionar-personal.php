@@ -14,7 +14,7 @@ include("funciones/personal_funciones.php");
 // 🔐 Validación de sesión y permisos
 // ===============================================
 if (!isset($_SESSION['rol']) || !in_array($_SESSION['rol'], ['administrador', 'encargado'])) {
-    header("Location: login_responsive.php");
+    header("Location: login.php");
     exit();
 }
 
