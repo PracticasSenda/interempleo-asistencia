@@ -36,27 +36,7 @@ if (isset($_POST['enviar'])) {
 
     $stmt->close();
 
-
-
-   /*
-    $_SESSION['nombre'] = $dni;
-
-    // Obtener el rol del usuario
-    $consulta_rol = "SELECT rol FROM usuarios WHERE dni = '$dni'";
-    $resultado_rol = mysqli_query($conexion, $consulta_rol);
-
- 
-    
-    if ($resultado_rol && mysqli_num_rows($resultado_rol) === 1) {
-        $fila_rol = mysqli_fetch_row($resultado_rol); // fetch_row devuelve array numérico
-        $_SESSION['rol'] = $fila_rol[0];
-    } else {
-        $_SESSION['rol'] = '';
-    }
-
-       */
-
-    // Guardamos si el usuario quiere mantener la sesión o no
+   // Guardamos si el usuario quiere mantener la sesión o no
     $_SESSION['sesion'] = $sesion; // "si" o "no"
 
     // Si no quiere mantener sesión, se crea una cookie temporal de 1 minuto
@@ -71,8 +51,13 @@ if (isset($_POST['enviar'])) {
 
     header("Location: asistencia.php");
     exit();
-  }
+  }  else {
+    // 🔴 Si la validación falla, mostramos mensaje de error
+    $error = "DNI o contraseña incorrectos.";
+  } 
 }
+
+
 ?>
 
 <!DOCTYPE html>
@@ -261,6 +246,36 @@ if (isset($_POST['enviar'])) {
   <!-- FORMULARIO CENTRADO -->
   <div class="login-box">
     <h2>Iniciar Sesión</h2>
+
+  <!--MENSAJE DE ERROR con borde inferior naranja que cambia de tono-->
+   <?php if (!empty($error)): ?>
+  <?php
+    // Lista de 5 tonos de naranja (de suave a fuerte)
+    $naranjas = ['#FFDAB9', '#FFA07A', '#FF8C00', '#FF6600', '#FF4500'];
+
+    // Leemos la cookie para saber en qué índice estábamos
+    $indice = isset($_COOKIE['color_error']) ? intval($_COOKIE['color_error']) : -1;
+
+    // Calculamos el siguiente índice
+    $indice = ($indice + 1) % count($naranjas);
+
+    // Guardamos el índice en la cookie para la próxima vez (1 hora)
+    setcookie('color_error', $indice, time() + 3600, "/");
+
+    $color_borde = $naranjas[$indice];
+  ?>
+  <p style="
+      color: red; 
+      text-align: center; 
+      margin-bottom: 1rem; 
+      border-bottom: 3px solid <?php echo $color_borde; ?>; 
+      padding-bottom: 5px;
+      font-weight: bold;
+  ">
+      <?php echo $error; ?>
+  </p>
+<?php endif; ?>
+
 
     <form method="post" action="login.php" onsubmit="return validar()">
       <label for="dni">DNI:</label>

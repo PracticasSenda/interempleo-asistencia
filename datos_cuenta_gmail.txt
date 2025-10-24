@@ -8,3 +8,4 @@ CORREO : interempleotucorreo@gmail.com
 CONTRASEÑA : 0con1tra2se3na4
 CONTRASEÑA DE 16 caracteres para PHPmailer : khdi mluh ledq vwzl
 
+La contraseña del administrador de DNI 9876543F de la base de datos es 1234 
