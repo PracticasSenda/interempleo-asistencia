@@ -18,7 +18,8 @@ if (isset($_GET['token'])) {
             $pass2 = mysqli_real_escape_string($conexion, strip_tags($_POST['pass2']));
 
             if ($pass1 === $pass2) {
-                $update = "UPDATE usuarios SET contraseña='$pass1' WHERE dni='{$_SESSION['dni_recuperacion']}'";
+                $hash = password_hash($pass1, PASSWORD_DEFAULT);
+                $update = "UPDATE usuarios SET contraseña='$hash' WHERE dni='{$_SESSION['dni_recuperacion']}'";
                 mysqli_query($conexion, $update);
 
                 $delete = "DELETE FROM tokens WHERE token='$token'";

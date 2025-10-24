@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 mysqli_query($conexion, $insert);
 
                 // Crear enlace de cambio de contraseña
-                $link = "http://localhost/interempleo-asistencia/cambiar_contrasena_responsive.php?token=$token"; // // CAMBIAR URL si es otra
+                $link = "http://localhost/interempleo-asistencia/cambiar_contrasena.php?token=$token"; // // CAMBIAR URL si es otra
 
                 // Enviar correo con PHPMailer
                 $mail = new PHPMailer(true);
