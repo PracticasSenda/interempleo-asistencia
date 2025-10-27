@@ -732,7 +732,7 @@ fechaInput.addEventListener('change', () => {
       tbody.innerHTML = '';
 
       if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No se encontraron listados para esta fecha.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No se encontraron listados para esta fecha.</td></tr>';
         tabla.style.display = 'table';
 
         inputIdListado.value = '';
