@@ -1,0 +1,11 @@
+
+
+DATOS DE LA CUENTA DE GMAIL : 
+
+FECHA DE NACIMIENTO : 01/01/2000 
+GENERO : PREFIERO NO DECIRLO (HAY UNA OPCION QUE ES ESTA)
+CORREO : interempleotucorreo@gmail.com
+CONTRASEÑA : 0con1tra2se3na4
+CONTRASEÑA DE 16 caracteres para PHPmailer : khdi mluh ledq vwzl
+
+La contraseña del administrador de DNI 9876543F de la base de datos es 1234 
