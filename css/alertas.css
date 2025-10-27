@@ -1,0 +1,86 @@
+/* === Banner global (para todas las alertas) === */
+.banner {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  margin: 10px auto;
+  width: fit-content;
+  max-width: 600px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  opacity: 0;
+  transform: translateY(-8px);
+  animation: fadeSlideIn 0.4s ease-out forwards;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+
+/* Colores y estilos por tipo */
+.banner.ok {
+  background: #e7f9ed;
+  color: #117a3a;
+  border-top: 3px solid #28a745;
+  box-shadow: 0 2px 6px rgba(40,167,69,0.15);
+}
+
+.banner.err {
+  background: #fdecea;
+  color: #c0392b;
+  border-top: 3px solid #e74c3c;
+  box-shadow: 0 2px 6px rgba(231,76,60,0.15);
+}
+
+.banner.warn {
+  background: #fff8e1;
+  color: #a67c00;
+  border-top: 3px solid #f1c40f;
+  box-shadow: 0 2px 6px rgba(241,196,15,0.15);
+}
+
+/* Icono SVG dentro del banner */
+.banner svg {
+  width: 18px !important;
+  height: 18px !important;
+  flex-shrink: 0;
+  margin-right: 6px;
+  stroke-width: 2.3;
+  display: inline-block !important;
+  vertical-align: middle;
+}
+
+/* Botón cerrar */
+.close-banner {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 0.9rem;
+  margin-left: auto;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.close-banner:hover { opacity: 1; }
+
+/* Banner temporal centrado */
+.banner.temp {
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
