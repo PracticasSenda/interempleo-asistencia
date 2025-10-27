@@ -309,6 +309,7 @@ include("validar_sesion.php");
       overflow-y: auto;
       z-index: 1000;
       font-size: 0.9rem;
+    
     }
 
     #sugerencias div:hover {
@@ -556,102 +557,121 @@ include("validar_sesion.php");
     echo "<p style='margin: 3rem auto; color: green; font-weight: bold; text-align: center;'>Asistencias guardadas correctamente</p>";
   }
   ?>
+<script>
+  const inputDni = document.getElementById('buscar_dni');
+const contenedorSugerencias = document.getElementById('sugerencias');
 
-  <script>
-    const inputDni = document.getElementById('buscar_dni');
-    const contenedorSugerencias = document.getElementById('sugerencias');
+// 🔹 Ocultar al cargar la página
+contenedorSugerencias.style.display = 'none';
 
-    inputDni.addEventListener('input', function() {
-      const texto = this.value.trim();
+inputDni.addEventListener('input', function() {
+  const texto = this.value.trim();
 
-      if (texto.length < 2) {
-        contenedorSugerencias.innerHTML = '';
+  if (texto.length < 2) {
+    contenedorSugerencias.innerHTML = '';
+    contenedorSugerencias.style.display = 'none'; // 🔥 Ocultar si hay menos de 2 caracteres
+    return;
+  }
+
+  fetch('/interempleo-asistencia/funciones_buscar.php?accion=buscar_sugerencias&term=' + encodeURIComponent(texto))
+    .then(res => res.json())
+    .then(data => {
+      contenedorSugerencias.innerHTML = '';
+
+      if (data.length === 0) {
+        contenedorSugerencias.style.display = 'none';
+        contenedorSugerencias.innerHTML = '<div style="padding: 0.5rem; color: #888;">No se encontraron coincidencias</div>';
         return;
       }
 
-      fetch('/interempleo-asistencia/funciones_buscar.php?accion=buscar_sugerencias&term=' + encodeURIComponent(texto))
-        .then(res => res.json())
-        .then(data => {
+      // 🔹 Mostrar el contenedor solo si hay resultados
+      contenedorSugerencias.style.display = 'block';
+
+      data.forEach(item => {
+        const opcion = document.createElement('div');
+        opcion.textContent = `${item.dni} - ${item.nombre}`;
+        opcion.style.padding = '0.5rem';
+        opcion.style.cursor = 'pointer';
+        opcion.style.borderBottom = '1px solid #ccc';
+
+        opcion.addEventListener('click', function() {
+          inputDni.value = item.dni;
           contenedorSugerencias.innerHTML = '';
-
-          if (data.length === 0) {
-            contenedorSugerencias.innerHTML = '<div style="padding: 0.5rem; color: #888;">No se encontraron coincidencias</div>';
-            return;
-          }
-
-          // Usamos "item" como nombre del elemento para mayor claridad
-          data.forEach(item => {
-            const opcion = document.createElement('div');
-            opcion.textContent = `${item.dni} - ${item.nombre}`;
-            opcion.style.padding = '0.5rem';
-            opcion.style.cursor = 'pointer';
-            opcion.style.borderBottom = '1px solid #ccc';
-
-            opcion.addEventListener('click', function() {
-              inputDni.value = item.dni;
-              contenedorSugerencias.innerHTML = '';
-            });
-
-            contenedorSugerencias.appendChild(opcion);
-          });
-        })
-        .catch(err => {
-          console.error('Error en sugerencias:', err);
+          contenedorSugerencias.style.display = 'none'; // 🔹 Ocultar tras selección
         });
-    });
 
-    // Oculta sugerencias si haces clic fuera
-    document.addEventListener('click', function(e) {
-      if (!contenedorSugerencias.contains(e.target) && e.target !== inputDni) {
-        contenedorSugerencias.innerHTML = '';
-      }
+        contenedorSugerencias.appendChild(opcion);
+      });
+    })
+    .catch(err => {
+      console.error('Error en sugerencias:', err);
+      contenedorSugerencias.style.display = 'none';
     });
+});
+
+// 🔹 Ocultar si se hace clic fuera
+document.addEventListener('click', function(e) {
+  if (!contenedorSugerencias.contains(e.target) && e.target !== inputDni) {
+    contenedorSugerencias.innerHTML = '';
+    contenedorSugerencias.style.display = 'none';
+  }
+});
   </script>
+<script>
+  const inputEncargado = document.getElementById('nombre_encargado');
+const contenedorEncargado = document.getElementById('sugerencias_encargado');
 
-  <script>
-    const inputEncargado = document.getElementById('nombre_encargado');
-    const contenedorEncargado = document.getElementById('sugerencias_encargado');
+// 🔹 Ocultar desde el inicio
+contenedorEncargado.style.display = 'none';
 
-    inputEncargado.addEventListener('input', function() {
-      const texto = this.value.trim();
+inputEncargado.addEventListener('input', function() {
+  const texto = this.value.trim();
 
-      if (texto.length < 2) {
-        contenedorEncargado.innerHTML = '';
+  if (texto.length < 2) {
+    contenedorEncargado.innerHTML = '';
+    contenedorEncargado.style.display = 'none';
+    return;
+  }
+
+  fetch('/interempleo-asistencia/funciones_buscar.php?accion=buscar_encargado&term=' + encodeURIComponent(texto))
+    .then(res => res.json())
+    .then(data => {
+      contenedorEncargado.innerHTML = '';
+
+      if (data.length === 0) {
+        contenedorEncargado.style.display = 'none';
         return;
       }
 
-      fetch('/interempleo-asistencia/funciones_buscar.php?accion=buscar_encargado&term=' + encodeURIComponent(texto))
-        .then(res => res.json())
-        .then(data => {
+      // 🔹 Mostrar el contenedor solo si hay resultados
+      contenedorEncargado.style.display = 'block';
+
+      data.forEach(nombre => {
+        const opcion = document.createElement('div');
+        opcion.textContent = nombre;
+
+        opcion.addEventListener('click', function() {
+          inputEncargado.value = nombre;
           contenedorEncargado.innerHTML = '';
-
-          if (data.length === 0) {
-            contenedorEncargado.innerHTML = '<div style="padding: 0.5rem; color: #888;">No se encontraron coincidencias</div>';
-            return;
-          }
-
-          data.forEach(nombre => {
-            const opcion = document.createElement('div');
-            opcion.textContent = nombre;
-
-            opcion.addEventListener('click', function() {
-              inputEncargado.value = nombre;
-              contenedorEncargado.innerHTML = '';
-            });
-
-            contenedorEncargado.appendChild(opcion);
-          });
-        })
-        .catch(err => {
-          console.error('Error al buscar encargado:', err);
+          contenedorEncargado.style.display = 'none'; // 🔹 Ocultar tras seleccionar
         });
-    });
 
-    document.addEventListener('click', function(e) {
-      if (!contenedorEncargado.contains(e.target) && e.target !== inputEncargado) {
-        contenedorEncargado.innerHTML = '';
-      }
+        contenedorEncargado.appendChild(opcion);
+      });
+    })
+    .catch(err => {
+      console.error('Error al buscar encargado:', err);
+      contenedorEncargado.style.display = 'none';
     });
+});
+
+// Ocultar si se hace clic fuera
+document.addEventListener('click', function(e) {
+  if (!contenedorEncargado.contains(e.target) && e.target !== inputEncargado) {
+    contenedorEncargado.innerHTML = '';
+    contenedorEncargado.style.display = 'none';
+  }
+});
   </script>
   <script>
     function toggleMenu() {
