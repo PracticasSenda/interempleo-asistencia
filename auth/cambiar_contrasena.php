@@ -18,11 +18,20 @@ if (isset($_GET['token'])) {
             $pass2 = mysqli_real_escape_string($conexion, strip_tags($_POST['pass2']));
 
             if ($pass1 === $pass2) {
-                $update = "UPDATE usuarios SET contraseña='$pass1' WHERE dni='{$_SESSION['dni_recuperacion']}'";
-                mysqli_query($conexion, $update);
+                // ✅ Hashear la nueva contraseña antes de guardarla
+                $hash = password_hash($pass1, PASSWORD_DEFAULT);
 
-                $delete = "DELETE FROM tokens WHERE token='$token'";
-                mysqli_query($conexion, $delete);
+                // Usar sentencia preparada para seguridad
+                $update = $conexion->prepare("UPDATE usuarios SET contraseña = ? WHERE dni = ?");
+                $update->bind_param("ss", $hash, $_SESSION['dni_recuperacion']);
+                $update->execute();
+                $update->close();
+
+                // Eliminar el token de recuperación
+                $delete = $conexion->prepare("DELETE FROM tokens WHERE token = ?");
+                $delete->bind_param("s", $token);
+                $delete->execute();
+                $delete->close();
 
                 $mensaje = "<p style='color:green; text-align:center;'>✅ Contraseña cambiada correctamente. Puedes <a href='login.php'>iniciar sesión</a>.</p>";
             } else {
@@ -74,7 +83,7 @@ label { text-align: left; font-size: 16px; color: var(--color-texto); }
 .input-container input[type="password"],
 .input-container input[type="text"] {
     width: 100%;
-    padding: 12px 40px 12px 12px; /* espacio para el icono a la derecha */
+    padding: 12px 40px 12px 12px;
     border: 1px solid var(--color-borde);
     border-radius: 4px;
     font-size: 16px;
@@ -95,9 +104,8 @@ label { text-align: left; font-size: 16px; color: var(--color-texto); }
     align-items: center;
     justify-content: center;
     height: 100%;
-    top: 0; /* Alinea perfectamente en todo el alto del input */
+    top: 0;
 }
-
 
 button { padding: 14px; background-color: var(--color-principal); color: white; border: none; border-radius: 4px; font-size: 17px; cursor: pointer; width: 100%; }
 button:hover { background-color: #e65c17; }
@@ -147,7 +155,7 @@ a { font-size: 15px; color: var(--color-principal); text-decoration: none; }
     <?= $mensaje ?>
 </div>
 
- <?php include(__DIR__ . '/../views/footer.php'); ?>
+<?php include(__DIR__ . '/../views/footer.php'); ?>
 
 <script>
 function togglePassword(inputId, icon) {

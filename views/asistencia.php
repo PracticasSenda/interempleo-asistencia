@@ -430,7 +430,7 @@ include(__DIR__ . '/../auth/validar_sesion.php');
       }
 
       // Petición AJAX al servidor para obtener datos del trabajador
-      fetch('../funciones_buscar.php?accion=buscar_trabajador&dni=' + encodeURIComponent(dni))
+      fetch('../funciones/funciones_buscar.php?accion=buscar_trabajador&dni=' + encodeURIComponent(dni))
         .then(response => response.json())
         .then(data => {
           if (data.error) {
@@ -479,6 +479,8 @@ include(__DIR__ . '/../auth/validar_sesion.php');
         `;
 
             cont.appendChild(div);
+            // 🔸 Vaciar el input después de agregar
+          document.getElementById('buscar_dni').value = '';
           }
         })
         .catch(error => {
@@ -562,15 +564,21 @@ include(__DIR__ . '/../auth/validar_sesion.php');
     const inputDni = document.getElementById('buscar_dni');
     const contenedorSugerencias = document.getElementById('sugerencias');
 
+    //Oucltar al inicio 
+    contenedorSugerencias.style.display = 'none'
+
     inputDni.addEventListener('input', function() {
       const texto = this.value.trim();
 
       if (texto.length < 2) {
         contenedorSugerencias.innerHTML = '';
+        contenedorSugerencias.style.display = 'none';
         return;
       }
+      // 🔸 Mostrar cuando hay 2 o más caracteres
+    contenedorSugerencias.style.display = 'block';
 
-      fetch('../funciones_buscar.php?accion=buscar_sugerencias&term=' + encodeURIComponent(texto))
+      fetch('../funciones/funciones_buscar.php?accion=buscar_sugerencias&term=' + encodeURIComponent(texto))
         .then(res => res.json())
         .then(data => {
           contenedorSugerencias.innerHTML = '';
@@ -591,6 +599,7 @@ include(__DIR__ . '/../auth/validar_sesion.php');
             opcion.addEventListener('click', function() {
               inputDni.value = item.dni;
               contenedorSugerencias.innerHTML = '';
+              contenedorSugerencias.style.display = 'none'; // 🔸 Ocultar tras seleccionar
             });
 
             contenedorSugerencias.appendChild(opcion);
@@ -604,7 +613,8 @@ include(__DIR__ . '/../auth/validar_sesion.php');
     // Oculta sugerencias si haces clic fuera
     document.addEventListener('click', function(e) {
       if (!contenedorSugerencias.contains(e.target) && e.target !== inputDni) {
-        contenedorSugerencias.innerHTML = '';
+        contenedorSugerencias.innerHTML = ''
+        contenedorSugerencias.style.display = 'none';;
       }
     });
   </script>
@@ -613,15 +623,21 @@ include(__DIR__ . '/../auth/validar_sesion.php');
     const inputEncargado = document.getElementById('nombre_encargado');
     const contenedorEncargado = document.getElementById('sugerencias_encargado');
 
+     // 🔸 Ocultar al inicio
+  contenedorEncargado.style.display = 'none';
+
     inputEncargado.addEventListener('input', function() {
       const texto = this.value.trim();
 
       if (texto.length < 2) {
         contenedorEncargado.innerHTML = '';
+        contenedorEncargado.style.display = 'none'
         return;
       }
+      // 🔸 Mostrar cuando hay 2 o más caracteres
+      contenedorEncargado.style.display = 'block';
 
-      fetch('../funciones_buscar.php?accion=buscar_encargado&term=' + encodeURIComponent(texto))
+      fetch('../funciones/funciones_buscar.php?accion=buscar_encargado&term=' + encodeURIComponent(texto))
         .then(res => res.json())
         .then(data => {
           contenedorEncargado.innerHTML = '';
@@ -638,6 +654,7 @@ include(__DIR__ . '/../auth/validar_sesion.php');
             opcion.addEventListener('click', function() {
               inputEncargado.value = nombre;
               contenedorEncargado.innerHTML = '';
+               contenedorEncargado.style.display = 'none'; // 🔸 Ocultar tras seleccionar
             });
 
             contenedorEncargado.appendChild(opcion);
@@ -651,6 +668,7 @@ include(__DIR__ . '/../auth/validar_sesion.php');
     document.addEventListener('click', function(e) {
       if (!contenedorEncargado.contains(e.target) && e.target !== inputEncargado) {
         contenedorEncargado.innerHTML = '';
+        contenedorEncargado.style.display = 'none'; // 🔸 Ocultar al hacer clic fuera
       }
     });
   </script>
