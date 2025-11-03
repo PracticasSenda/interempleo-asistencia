@@ -624,7 +624,6 @@ td {
     <table id="tabla_listados" style="display:none;">
       <thead>
         <tr>
-          <th>ID</th>
           <th>Empresa</th>
           <th>Producto</th>
           <th>Fecha</th>
@@ -656,7 +655,6 @@ td {
     <table id="tabla_asistencias">
       <thead>
         <tr>
-          <th>ID</th>
           <th>Nombre</th>
           <th>Apellidos</th>
           <th>DNI</th>
@@ -744,7 +742,6 @@ fechaInput.addEventListener('change', () => {
       data.forEach(listado => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td>${listado.id}</td>
           <td>${listado.empresa}</td>
           <td>${listado.producto}</td>
           <td>${listado.fecha}</td>
@@ -758,6 +755,8 @@ fechaInput.addEventListener('change', () => {
             </div>
           </td>
         `;
+        //Guardar el id_listado dentro del tr
+        tr.dataset.idListado = listado.id_listado;
 
         tr.addEventListener('click', () => {
           if (seleccionado) {
@@ -802,7 +801,6 @@ function mostrarAsistencias(idListado) {
         data.forEach(asistencia => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td>${asistencia.id}</td>
             <td>${asistencia.nombre} </td>
             <td>${asistencia.apellidos}</td>
             <td>${asistencia.dni}</td>
@@ -843,7 +841,8 @@ document.addEventListener('click', function (e) {
 
     const btn = e.target;
     const row = btn.closest('tr');
-    const idListado = row.querySelector('td').textContent.trim();
+    const idListado = row.dataset.idListado;
+
 
     let menu = document.getElementById('menu-flotante');
     if (!menu) {
