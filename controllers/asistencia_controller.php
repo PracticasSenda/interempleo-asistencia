@@ -10,7 +10,7 @@ mysqli_set_charset($conexion, "utf8mb4");
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
 /* ============================================================
-   🔍 BUSCAR ENCARGADO (tabla usuarios)
+   BUSCAR ENCARGADO (tabla usuarios)
 ============================================================ */
 if ($action === 'buscar_encargado') {
     $q = mysqli_real_escape_string($conexion, mb_strtoupper($_GET['q'] ?? '', 'UTF-8'));
@@ -44,7 +44,7 @@ if ($action === 'buscar_encargado') {
 
 
 /* ============================================================
-   🔍 BUSCADOR DE TRABAJADORES (para sugerencias flotantes)
+   BUSCADOR DE TRABAJADORES (para sugerencias flotantes)
 ============================================================ */
 if ($action === 'buscar_trabajadores') {
     $q = mysqli_real_escape_string($conexion, mb_strtoupper($_GET['q'] ?? '', 'UTF-8'));
@@ -77,7 +77,7 @@ if ($action === 'buscar_trabajadores') {
 }
 
 /* ============================================================
-   📄 CARGAR DETALLE DE TRABAJADOR
+   CARGAR DETALLE DE TRABAJADOR
 ============================================================ */
 if ($action === 'detalle_trabajador') {
     $dni = mysqli_real_escape_string($conexion, $_GET['dni'] ?? '');
@@ -113,7 +113,7 @@ echo '
 }
 
 /* ============================================================
-   💾 GUARDAR DETALLE DE TRABAJADOR
+   GUARDAR DETALLE DE TRABAJADOR
 ============================================================ */
 if ($action === 'guardar_detalle') {
     $dni = mysqli_real_escape_string($conexion, $_POST['dni'] ?? '');
@@ -125,42 +125,68 @@ if ($action === 'guardar_detalle') {
     $horas = mysqli_real_escape_string($conexion, $_POST['Horas'] ?? '');
     $obs = mysqli_real_escape_string($conexion, $_POST['Observaciones'] ?? '');
 
+ //  Si no asistió, permitir solo observaciones
+if ($asistencia !== 'si') {
+    // Si intenta enviar bandejas u horas, las forzamos a 0
+    $bandeja = 0;
+    $horas = 0;
+}
+
+
     // Buscar id_trabajador
     $resTrab = mysqli_query($conexion, "SELECT id FROM trabajadores WHERE dni='$dni' LIMIT 1");
     if (!$resTrab || mysqli_num_rows($resTrab) === 0) {
-        ob_clean();
         http_response_code(404);
         exit('No se encontró el trabajador');
     }
     $id_trabajador = mysqli_fetch_assoc($resTrab)['id'];
 
-    // Verificar si ya hay un registro para el mismo día (no reemplazar partes anteriores)
-    $check_sql = "SELECT id FROM asistencias WHERE dni='$dni' AND fecha='$fecha' LIMIT 1";
+    // Verificar si ya hay un registro para ese trabajador y fecha
+    $check_sql = "SELECT id FROM asistencias WHERE dni='$dni' AND DATE(fecha)=DATE('$fecha') LIMIT 1";
     $check_res = mysqli_query($conexion, $check_sql);
 
     if ($check_res && mysqli_num_rows($check_res) > 0) {
-        // Si ya hay un registro, crear un nuevo parte sin sobrescribir el anterior
+        // Si ya hay uno, no sobrescribir: crear otro registro con timestamp actual
         $fecha_actual = date("Y-m-d H:i:s");
-        $sql = "INSERT INTO asistencias (id_trabajador, dni, empresa, fecha, producto, asistencia, Bandeja, Horas, Observaciones)
-                VALUES ('$id_trabajador', '$dni', '$empresa', '$fecha_actual', '$producto', '$asistencia', '$bandeja', '$horas', '$obs')";
+        $sql = "INSERT INTO asistencias 
+                (id_trabajador, dni, empresa, fecha, producto, asistencia, Bandeja, Horas, Observaciones)
+                VALUES 
+                ('$id_trabajador', '$dni', '$empresa', '$fecha_actual', '$producto', '$asistencia', '$bandeja', '$horas', '$obs')";
     } else {
-        // Si no hay registro previo, insertar normalmente
-        $sql = "INSERT INTO asistencias (id_trabajador, dni, empresa, fecha, producto, asistencia, Bandeja, Horas, Observaciones)
-                VALUES ('$id_trabajador', '$dni', '$empresa', '$fecha', '$producto', '$asistencia', '$bandeja', '$horas', '$obs')";
+      // Intentar asociar el registro al último listado creado (si existe)
+$id_listado = null;
+$resListado = mysqli_query($conexion, "SELECT id FROM listados_asistencias ORDER BY id DESC LIMIT 1");
+if ($resListado && mysqli_num_rows($resListado) > 0) {
+    $id_listado = mysqli_fetch_assoc($resListado)['id'];
+}
+
+// Insertar asistencia (con o sin id_listado)
+if ($id_listado) {
+    $sql = "INSERT INTO asistencias 
+            (id_listado, id_trabajador, dni, empresa, fecha, producto, asistencia, Bandeja, Horas, Observaciones)
+            VALUES 
+            ('$id_listado', '$id_trabajador', '$dni', '$empresa', '$fecha', '$producto', '$asistencia', '$bandeja', '$horas', '$obs')";
+} else {
+    $sql = "INSERT INTO asistencias 
+            (id_trabajador, dni, empresa, fecha, producto, asistencia, Bandeja, Horas, Observaciones)
+            VALUES 
+            ('$id_trabajador', '$dni', '$empresa', '$fecha', '$producto', '$asistencia', '$bandeja', '$horas', '$obs')";
+}
+
     }
 
     if (mysqli_query($conexion, $sql)) {
-        http_response_code(200);
-        echo 'OK';
+        echo "OK"; // ✅ Respuesta limpia sin espacios ni texto adicional
     } else {
-        http_response_code(500);
-        echo 'Error SQL: ' . mysqli_error($conexion);
+        // 🚨 Mostrar error exacto para depurar
+        echo "ERROR_SQL: " . mysqli_error($conexion);
     }
     exit;
 }
 
+
 /* ===========================================================
-   💾 GUARDAR PARTE COMPLETO (usando listados_asistencias)
+ GUARDAR PARTE COMPLETO (usando listados_asistencias)
 =========================================================== */
 if ($action === 'guardar_parte_completo') {
     $encargado_nombre = mysqli_real_escape_string($conexion, $_POST['encargado'] ?? '');
@@ -226,7 +252,7 @@ if ($action === 'guardar_parte_completo') {
         }
     }
 
-    // ✅ Respuesta limpia y segura
+
     ob_clean();
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode([
@@ -241,7 +267,7 @@ if ($action === 'guardar_parte_completo') {
 
 
 /* ============================================================
-   🚫 ACCIÓN DESCONOCIDA
+ ACCIÓN DESCONOCIDA
 ============================================================ */
 http_response_code(400);
 echo 'Acción no válida.';

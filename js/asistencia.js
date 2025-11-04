@@ -147,7 +147,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <td><input type="checkbox" class="check-asistencia" data-dni="${dni}"></td>
       <td>${nombre}</td>
       <td>${dni}</td>
-      <td class="acciones">
+<td class="acciones">
   <div class="menu-acciones">
     <button type="button" class="btn-menu" aria-haspopup="true" aria-expanded="false" title="Acciones">⋮</button>
     <div class="menu-list" role="menu">
@@ -157,7 +157,30 @@ document.addEventListener("DOMContentLoaded", () => {
   </div>
 </td>
 
+
     `;
+
+/* Esto es para que se oculte Detalles en los tres puntos si no hay asistencia
+
+// 🔸 Controlar visibilidad del menú según asistencia
+const checkAsistencia = fila.querySelector(`.check-asistencia[data-dni="${dni}"]`);
+const menuDetalles = fila.querySelector(".btn-detalle-toggle");
+
+function actualizarVisibilidadMenu() {
+  if (checkAsistencia.checked) {
+    menuDetalles.style.display = "block";
+  } else {
+    menuDetalles.style.display = "none";
+  }
+}
+
+// Ejecutar al crear y cuando cambie el estado
+actualizarVisibilidadMenu();
+checkAsistencia.addEventListener("change", actualizarVisibilidadMenu);
+
+*/
+
+
 
     const filaDetalle = document.createElement("tr");
     filaDetalle.classList.add("fila-detalle");
@@ -174,69 +197,90 @@ document.addEventListener("DOMContentLoaded", () => {
     activarEventosFila(fila, filaDetalle);
   }
 
-  /* =====================================================
-     🔸 ACTIVAR EVENTOS DE CADA FILA
-  ===================================================== */
-  function activarEventosFila(fila, filaDetalle) {
-    const btnDetalle = fila.querySelector(".btn-detalle-toggle");
-    const btnEliminar = fila.querySelector(".btn-eliminar-fila");
+/* =====================================================
+ 🔸 ACTIVAR EVENTOS DE CADA FILA
+===================================================== */
+function activarEventosFila(fila, filaDetalle) {
+  const btnDetalle = fila.querySelector(".btn-detalle-toggle");
+  const btnEliminar = fila.querySelector(".btn-eliminar-fila");
 
-    // Mostrar u ocultar detalle
-    btnDetalle.addEventListener("click", async () => {
-      const dni = btnDetalle.dataset.dni;
-      const abierto = filaDetalle.classList.contains("open");
+  // Mostrar u ocultar detalle
+  btnDetalle.addEventListener("click", async () => {
+    const dni = btnDetalle.dataset.dni;
+    const abierto = filaDetalle.classList.contains("open");
 
-      // Cerrar otros abiertos
-      document.querySelectorAll(".fila-detalle.open").forEach(f => f.classList.remove("open"));
+    // Cerrar otros abiertos
+    document.querySelectorAll(".fila-detalle.open").forEach(f => f.classList.remove("open"));
 
-      if (!abierto) {
-        filaDetalle.classList.add("open");
+    if (!abierto) {
+      filaDetalle.classList.add("open");
 
-        // Cargar detalle si no está cargado
-        if (!filaDetalle.dataset.cargado) {
-          const fecha = document.getElementById("fecha").value;
-          const params = new URLSearchParams({ action: "detalle_trabajador", dni, fecha });
-          const resp = await fetch("../controllers/asistencia_controller.php?" + params);
-          const html = await resp.text();
-          filaDetalle.querySelector(".detalle-content").innerHTML = html;
+      // Cargar detalle si no está cargado
+      if (!filaDetalle.dataset.cargado) {
+        const fecha = document.getElementById("fecha").value;
+        const params = new URLSearchParams({ action: "detalle_trabajador", dni, fecha });
+        const resp = await fetch("../controllers/asistencia_controller.php?" + params);
+        const html = await resp.text();
+        filaDetalle.querySelector(".detalle-content").innerHTML = html;
 
+        // 🧩 Aplicar los valores generales si existen (cuando se abre el detalle)
+        const bandejasPend = fila.dataset.bandejasPendientes || "";
+        const horasPend = fila.dataset.horasPendientes || "";
 
-          // 🧩 Aplicar los valores generales si existen (cuando se abre el detalle)
-          const bandejasPend = fila.dataset.bandejasPendientes || "";
-          const horasPend = fila.dataset.horasPendientes || "";
+        if (bandejasPend || horasPend) {
+          const inputB = filaDetalle.querySelector(`input[name='Bandeja_${dni}']`);
+          const inputH = filaDetalle.querySelector(`input[name='Horas_${dni}']`);
+          if (inputB && bandejasPend) inputB.value = bandejasPend;
+          if (inputH && horasPend) inputH.value = horasPend;
+        }
 
-          if (bandejasPend || horasPend) {
-            const inputB = filaDetalle.querySelector(`input[name='Bandeja_${dni}']`);
-            const inputH = filaDetalle.querySelector(`input[name='Horas_${dni}']`);
-            if (inputB && bandejasPend) inputB.value = bandejasPend;
-            if (inputH && horasPend) inputH.value = horasPend;
-          }
+        filaDetalle.dataset.cargado = "1";
 
-          filaDetalle.dataset.cargado = "1";
+        // 🔹 Desactivar bandejas y horas si no asistió (pero permitir observaciones)
+        const checkAsistencia = fila.querySelector(`.check-asistencia[data-dni="${dni}"]`);
+        const inputB = filaDetalle.querySelector(`input[name='Bandeja_${dni}']`);
+        const inputH = filaDetalle.querySelector(`input[name='Horas_${dni}']`);
 
-          // Guardar detalle individual
-          const btnGuardar = filaDetalle.querySelector(".btn-guardar-detalle");
-          if (btnGuardar) {
-            btnGuardar.addEventListener("click", async () => {
-              await guardarDetalle(dni, filaDetalle);
-              filaDetalle.classList.remove("open"); // cerrar tras guardar
-            });
+        function actualizarCampos() {
+          const asistio = checkAsistencia && checkAsistencia.checked;
+          if (!asistio) {
+            if (inputB) inputB.disabled = true;
+            if (inputH) inputH.disabled = true;
+          } else {
+            if (inputB) inputB.disabled = false;
+            if (inputH) inputH.disabled = false;
           }
         }
-      } else {
-        filaDetalle.classList.remove("open");
-      }
-    });
 
-    // Eliminar trabajador de la tabla
-    btnEliminar.addEventListener("click", () => {
-      if (confirm("¿Seguro que quieres quitar este trabajador del parte?")) {
-        fila.remove();
-        filaDetalle.remove();
-        actualizarPlaceholder();
+        // Ejecutar al abrir el detalle
+        actualizarCampos();
+        // Escuchar cambios del checkbox
+        checkAsistencia.addEventListener("change", actualizarCampos);
+
+        // Guardar detalle individual
+        const btnGuardar = filaDetalle.querySelector(".btn-guardar-detalle");
+        if (btnGuardar) {
+          btnGuardar.addEventListener("click", async () => {
+            await guardarDetalle(dni, filaDetalle);
+            filaDetalle.classList.remove("open"); // cerrar tras guardar
+          });
+        }
       }
-    });
-  }
+    } else {
+      filaDetalle.classList.remove("open");
+    }
+  });
+
+  // Eliminar trabajador de la tabla
+  btnEliminar.addEventListener("click", () => {
+    if (confirm("¿Seguro que quieres quitar este trabajador del parte?")) {
+      fila.remove();
+      filaDetalle.remove();
+      actualizarPlaceholder();
+    }
+  });
+}
+
 
 async function guardarDetalle(dni, contenedor) {
   const empresa = document.getElementById("empresa").value.trim();
