@@ -160,26 +160,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     `;
 
-/* Esto es para que se oculte Detalles en los tres puntos si no hay asistencia
-
-// 🔸 Controlar visibilidad del menú según asistencia
-const checkAsistencia = fila.querySelector(`.check-asistencia[data-dni="${dni}"]`);
-const menuDetalles = fila.querySelector(".btn-detalle-toggle");
-
-function actualizarVisibilidadMenu() {
-  if (checkAsistencia.checked) {
-    menuDetalles.style.display = "block";
-  } else {
-    menuDetalles.style.display = "none";
-  }
-}
-
-// Ejecutar al crear y cuando cambie el estado
-actualizarVisibilidadMenu();
-checkAsistencia.addEventListener("change", actualizarVisibilidadMenu);
-
-*/
-
 
 
     const filaDetalle = document.createElement("tr");
@@ -510,6 +490,57 @@ function actualizarContador() {
     <strong>Presentes:</strong> ${presentes} | 
     <strong>Ausentes:</strong> ${ausentes}
   `;
+}
+
+
+/* ============================================================
+   🔁 Ordenar tabla de trabajadores (alfabético, recientes, asistencia)
+============================================================ */
+const selectOrden = document.getElementById("orden_tabla");
+
+if (selectOrden) {
+  selectOrden.addEventListener("change", () => {
+    const tipoOrden = selectOrden.value;
+    const tbody = document.querySelector("#tabla_asistencia tbody");
+
+    // Obtener todas las filas principales
+    const filas = Array.from(tbody.querySelectorAll("tr[id^='fila_']"));
+
+    // 🔹 Ordenar alfabéticamente (por nombre)
+    if (tipoOrden === "alfabetico") {
+      filas.sort((a, b) => {
+        const nombreA = a.querySelector("td:nth-child(2)").textContent.trim().toLowerCase();
+        const nombreB = b.querySelector("td:nth-child(2)").textContent.trim().toLowerCase();
+        return nombreA.localeCompare(nombreB, "es");
+      });
+    }
+
+    // 🔹 Ordenar por los más recientes (últimos agregados primero)
+    else if (tipoOrden === "recientes") {
+      filas.reverse();
+    }
+
+    // 🔹 Ordenar por asistencia (presentes arriba, ausentes abajo)
+    else if (tipoOrden === "asistencia") {
+      filas.sort((a, b) => {
+        const checkA = a.querySelector(".check-asistencia")?.checked ? 1 : 0;
+        const checkB = b.querySelector(".check-asistencia")?.checked ? 1 : 0;
+        return checkB - checkA; // 1 (asistió) primero
+      });
+    }
+
+    // 🔹 Reconstruir el tbody respetando las filas detalle
+    tbody.innerHTML = "";
+    filas.forEach(fila => {
+      const detalle = fila.nextElementSibling;
+      tbody.appendChild(fila);
+      if (detalle && detalle.classList.contains("fila-detalle")) {
+        tbody.appendChild(detalle);
+      }
+    });
+
+    mostrarBanner(`✅ Orden cambiado a: ${selectOrden.options[selectOrden.selectedIndex].text}`, "ok");
+  });
 }
 
 // Escuchar los cambios de asistencia

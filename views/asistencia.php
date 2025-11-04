@@ -44,9 +44,9 @@ include(__DIR__ . '/../config/csrf.php');
         </label>
         <br>
       </div>
-<div class="separador-limpio">
-  <span>Opciones de búsqueda</span>
-</div>
+      <div class="separador-limpio">
+        <span>Opciones de búsqueda</span>
+      </div>
       <!-- Orden y buscador -->
       <div class="panel-control">
 
@@ -59,7 +59,9 @@ include(__DIR__ . '/../config/csrf.php');
           <select id="orden_tabla">
             <option value="alfabetico" selected>A-Z (alfabético)</option>
             <option value="recientes">Más recientes</option>
+            <option value="asistencia">Asistentes primero</option>
           </select>
+
 
         </label>
 
@@ -89,20 +91,20 @@ include(__DIR__ . '/../config/csrf.php');
         </table>
       </div>
 
-  <!-- Contador + Botón -->
-<div class="acciones-finales">
-  
+      <!-- Contador + Botón -->
+      <div class="acciones-finales">
 
-  <div id="contador_asistencia" class="contador-asistencia">
-    <strong>Total:</strong> <span id="count-total">0</span> |
-    <strong>Presentes:</strong> <span id="count-pres">0</span> |
-    <strong>Ausentes:</strong> <span id="count-aus">0</span>
-  </div>
-  <button type="button" id="btn_guardar_parte" class="btn-principal">
-    Guardar parte completo
-  </button>
-  
-</div>
+
+        <div id="contador_asistencia" class="contador-asistencia">
+          <strong>Total:</strong> <span id="count-total">0</span> |
+          <strong>Presentes:</strong> <span id="count-pres">0</span> |
+          <strong>Ausentes:</strong> <span id="count-aus">0</span>
+        </div>
+        <button type="button" id="btn_guardar_parte" class="btn-principal">
+          Guardar parte completo
+        </button>
+
+      </div>
 
       <!-- Banner confirmación -->
       <div id="banner_confirmacion" class="banner ok" style="display:none;">
@@ -115,17 +117,17 @@ include(__DIR__ . '/../config/csrf.php');
   </div>
 
 
-<!-- Modal de resumen antes de guardar -->
-<div id="modal-resumen-parte" class="modal-mini" style="display:none;">
-  <div class="modal-mini-content resumen-content">
-    <h3>Confirmar parte de asistencia</h3>
-    <div id="resumen-parte"></div>
-    <div class="modal-mini-buttons">
-      <button id="btn-cancelar-resumen" class="btn-secundario">Cancelar</button>
-      <button id="btn-confirmar-resumen" class="btn-principal">Confirmar y guardar</button>
+  <!-- Modal de resumen antes de guardar -->
+  <div id="modal-resumen-parte" class="modal-mini" style="display:none;">
+    <div class="modal-mini-content resumen-content">
+      <h3>Confirmar parte de asistencia</h3>
+      <div id="resumen-parte"></div>
+      <div class="modal-mini-buttons">
+        <button id="btn-cancelar-resumen" class="btn-secundario">Cancelar</button>
+        <button id="btn-confirmar-resumen" class="btn-principal">Confirmar y guardar</button>
+      </div>
     </div>
   </div>
-</div>
 
 
   <?php include(__DIR__ . '/footer.php'); ?>
