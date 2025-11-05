@@ -44,8 +44,8 @@ $tipo = $_GET['tipo'] ?? '';
            Nuevas asistencias
         </a>
 
-        <a href="../export/exportar_excel_pdf.php"
-           class="<?= ($pagina_actual === 'exportar_excel_pdf.php') ? 'activo' : '' ?>">
+        <a href="../views/gestionar-asistencia.php"
+           class="<?= ($pagina_actual === 'gestionar-asistencia.php') ? 'activo' : '' ?>">
            Gestionar asistencias
         </a>
 
