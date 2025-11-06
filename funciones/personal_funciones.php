@@ -16,6 +16,17 @@ if (!defined('APP_VALID')) {
 ========================================================= */
 function obtener_listado($conexion, $tipo, $estado, $q, $orden, $rol)
 {
+    // ✅ Validar valores permitidos (protección adicional)
+    $tipos_validos = ['trabajadores', 'encargados'];
+    $orden_validos = ['alfabetico', 'recientes'];
+    $estado_validos = ['activo', 'inactivo', 'todos'];
+
+    if (!in_array($tipo, $tipos_validos)) $tipo = 'trabajadores';
+    if (!in_array($orden, $orden_validos)) $orden = 'recientes';
+    if (!in_array($estado, $estado_validos)) $estado = 'activo';
+
+    // ===================================================
+    
     if ($tipo === 'encargados' && $rol === 'administrador') {
         $base  = "FROM usuarios WHERE rol='encargado'";
         $cols  = "id, nombre, apellidos, DNI AS dni, activo";
