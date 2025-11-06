@@ -1,3 +1,5 @@
+<link rel="stylesheet" href="../css/style-global.css">
+
 <?php
 if (session_status() === PHP_SESSION_NONE) {
     session_start();

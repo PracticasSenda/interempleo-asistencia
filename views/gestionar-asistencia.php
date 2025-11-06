@@ -1,386 +1,187 @@
 <?php
 include(__DIR__ . '/../auth/validar_sesion.php');
+include(__DIR__ . '/../config/db.php');
+
+$fecha = $_GET['fecha'] ?? null;
+$id_listado = $_GET['id_listado'] ?? null;
 ?>
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Exportar asistencia por fecha</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestionar Asistencia - Interempleo</title>
 
-   <link rel="stylesheet" href="../css/gestionar-asistencia.css">
-  
-
+  <!-- Estilos -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <link rel="stylesheet" href="../css/gestionar-asistencia.css">
 </head>
 
 <body>
+  <?php include(__DIR__ . '/header.php'); ?>
 
-
-<?php include(__DIR__ . '/../views/header.php');?>
-  <!-- Dropdown del menú -->
-<div class="menu-dropdown" id="menuDropdown">
-
-<?php if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'administrador'): ?>
-  <a href="/interempleo-asistencia/views/gestionar-personal.php?tipo=encargados&vista=lista">Gestión de encargados</a>
-<?php endif; ?>  
-<a href="/interempleo-asistencia/views/gestionar-personal.php?tipo=trabajadores&vista=lista">Gestión de trabajadores</a>
-  <a href="/interempleo-asistencia/views/asistencia.php">Parte de asistencia</a>
-  <a href="/interempleo-asistencia/auth/cerrar_sesion.php">Cerrar sesión</a>
-</div>
-
-
-  <div class="contenedor-central">
-
-    <form id="form-buscar" method="GET" action="buscar_listado_por_fecha.php">
-      <label for="fecha_buscar">Buscar listados por fecha:</label>
-      <input type="date" id="fecha_buscar" name="fecha" required />
-      <input type="hidden" id="id_listado" name="id_listado" />
-
-    </form>
-
-    <h2 class="titulo-listado">Selecciona un listado</h2>
-
-
-    <table id="tabla_listados" style="display:none;">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Empresa</th>
-          <th>Producto</th>
-          <th>Fecha</th>
-          <th>Encargado</th>
-
-          <th>Opciones</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-
-    <!-- MODAL para confirmación de exportar -->
-<div id="modalExportar" style="display:none;">
-  <div class="modal-content">
-    <p id="modal-text">¿Quieres exportar este listado?</p>
-    <div class="modal-buttons">
-      <button id="confirmarExportar" class="btn-confirmar">Confirmar</button>
-      <button id="cancelarExportar" class="btn-cancelar">Cancelar</button>
+  <main>
+    <div class="buscador-fecha">
+      <label for="fecha_buscar"><strong>Selecciona una fecha:</strong></label>
+      <input type="text" id="fecha_buscar" placeholder="Selecciona fecha" readonly>
+      <button class="btn-aplicar" id="btnBuscar">Buscar</button>
     </div>
-  </div>
-</div>
 
+    <?php
+    if ($fecha && !$id_listado) {
+      echo "<h2>Selecciona un listado</h2>";
 
-     <!-- Tabla de asistencias (oculta inicialmente) -->
-<div id="contenedor-asistencias" style="display:none;">
-  <button id="btn_volver_listados" style="display: none;">← Volver a listados</button>
-  <h2 class="titulo-listado">Asistencias del listado</h2>
-  <div style="overflow-x: auto;">
-    <table id="tabla_asistencias">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Nombre</th>
-          <th>Apellidos</th>
-          <th>DNI</th>
-          <th>Asistencia</th>
-          <th>Empresa</th>
-          <th>Fecha</th>
-          <th>Producto</th>
-          <th>Bandeja</th>
-          <th>Horas</th>
-          <th style="min-width:200px;">Observaciones</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-</div>
+      $sql = "
+        SELECT l.id, l.empresa, l.producto, l.fecha, u.nombre AS encargado
+        FROM listados_asistencias l
+        JOIN usuarios u ON l.id_encargado = u.id
+        WHERE l.fecha = '$fecha'
+        ORDER BY l.id DESC
+      ";
+      $res = mysqli_query($conexion, $sql);
 
-    
-   
-    
-
-
-
-   
-
-
-  </div>
-
-</body>
-
-<script>
-const fechaInput = document.getElementById('fecha_buscar');
-const tabla = document.getElementById('tabla_listados');
-const tbody = tabla.querySelector('tbody');
-const inputIdListado = document.getElementById('id_listado');
-const contenedorAsistencias = document.getElementById('contenedor-asistencias');
-const tablaListados = document.getElementById('tabla_listados');
-const tbodyAsistencias = document.querySelector('#tabla_asistencias tbody');
-const tituloListado = document.querySelector('.titulo-listado');
-
-let seleccionado = null;
-
-// Variables modal
-const modal = document.getElementById('modalExportar');
-const modalText = document.getElementById('modal-text');
-const btnConfirmar = document.getElementById('confirmarExportar');
-const btnCancelar = document.getElementById('cancelarExportar');
-
-let exportarTipo = null; // "pdf" o "excel"
-let exportarIdListado = null;
-
-// Al cambiar la fecha
-fechaInput.addEventListener('change', () => {
-  const fecha = fechaInput.value;
-
-  // Resetear vista
-  contenedorAsistencias.style.display = 'none';
-  tablaListados.style.display = 'none';
-
-  if (!fecha) {
-    tabla.style.display = 'none';
-    tbody.innerHTML = '';
-
-    inputIdListado.value = '';
-
-    seleccionado = null;
-    return;
-  }
-
-  fetch('/interempleo-asistencia/funciones/funciones_buscar.php?accion=buscar_listados_por_fecha&fecha=' + fecha)
-    .then(res => res.json())
-    .then(data => {
-      tbody.innerHTML = '';
-
-      if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No se encontraron listados para esta fecha.</td></tr>';
-        tabla.style.display = 'table';
-
-        inputIdListado.value = '';
-
-        seleccionado = null;
-        return;
-      }
-
-      data.forEach(listado => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${listado.id}</td>
-          <td>${listado.empresa}</td>
-          <td>${listado.producto}</td>
-          <td>${listado.fecha}</td>
-          <td>${listado.encargado}</td>
-          <td style="position: relative;">
-            <button class="btn-opciones" title="Más opciones">⋮</button>
-            <div class="menu-opciones" style="display: none;" data-id-listado="${listado.id}">
-              <button class="menu-item exportar-pdf">Exportar PDF</button>
-              <button class="menu-item exportar-excel">Exportar Excel</button>
-              <button class="menu-item ver-asistencias">Ver asistencias</button>
-            </div>
-          </td>
-        `;
-
-        tr.addEventListener('click', () => {
-          if (seleccionado) {
-            seleccionado.classList.remove('selected');
-          }
-
-          tr.classList.add('selected');
-          seleccionado = tr;
-          inputIdListado.value = listado.id;
-        });
-
-        tbody.appendChild(tr);
-      });
-
-      tabla.style.display = 'table';
-
-      inputIdListado.value = '';
-      seleccionado = null;
-    })
-    .catch(err => {
-      console.error('Error al buscar listados:', err);
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Error al cargar los listados.</td></tr>';
-      tabla.style.display = 'table';
-
-      inputIdListado.value = '';
-
-      seleccionado = null;
-    });
-});
-
-// Mostrar asistencias de un listado
-function mostrarAsistencias(idListado) {
-  console.log('Mostrar asistencias para listado:', idListado);
-  fetch('/interempleo-asistencia/funciones/funciones_buscar.php?accion=buscar_asistencias_por_listado&id_listado=' + idListado)
-    .then(res => res.json())
-    .then(data => {
-      tbodyAsistencias.innerHTML = '';
-
-      if (data.length === 0) {
-        tbodyAsistencias.innerHTML = '<tr><td colspan="10" style="text-align:center;">No se encontraron asistencias.</td></tr>';
+      if ($res && mysqli_num_rows($res) > 0) {
+        echo "<div class='tabla-responsive'>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Empresa</th>
+                      <th>Producto</th>
+                      <th>Fecha</th>
+                      <th>Encargado</th>
+                      <th>Opciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>";
+        while ($fila = mysqli_fetch_assoc($res)) {
+          echo "<tr>
+                  <td>{$fila['id']}</td>
+                  <td>{$fila['empresa']}</td>
+                  <td>{$fila['producto']}</td>
+                  <td>{$fila['fecha']}</td>
+                  <td>{$fila['encargado']}</td>
+                  <td><a href='?id_listado={$fila['id']}&fecha={$fila['fecha']}' class='btn-ver'>👁️ Ver</a></td>
+                </tr>";
+        }
+        echo "</tbody></table></div>";
       } else {
-        data.forEach(asistencia => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${asistencia.id}</td>
-            <td>${asistencia.nombre} </td>
-            <td>${asistencia.apellidos}</td>
-            <td>${asistencia.dni}</td>
-            <td>${asistencia.asistencia}</td>
-            <td>${asistencia.empresa}</td>
-            <td>${asistencia.fecha}</td>
-            <td>${asistencia.producto}</td>
-            <td>${asistencia.Bandeja}</td>
-            <td>${asistencia.Horas}</td>
-            <td class="observaciones">${asistencia.Observaciones}</td>
-          `;
-          tbodyAsistencias.appendChild(tr);
-        });
+        echo "<p class='mensaje-vacio'>No hay listados para esta fecha.</p>";
+      }
+    }
+
+    // 🔹 Mostrar detalle del listado
+    elseif ($id_listado) {
+      echo "<a href='?fecha=$fecha' class='btn-volver'>← Volver a listados</a>";
+
+      $sql_info = "
+        SELECT l.empresa, l.producto, l.fecha, u.nombre AS nombre_encargado, u.apellidos AS apellidos_encargado
+        FROM listados_asistencias l
+        JOIN usuarios u ON l.id_encargado = u.id
+        WHERE l.id = '$id_listado'
+        LIMIT 1
+      ";
+      $res_info = mysqli_query($conexion, $sql_info);
+
+      if ($res_info && mysqli_num_rows($res_info) > 0) {
+        $info = mysqli_fetch_assoc($res_info);
+        echo "
+        <div class='info-parte'>
+          <p><strong>Empresa:</strong> {$info['empresa']}</p>
+          <p><strong>Producto:</strong> {$info['producto']}</p>
+          <p><strong>Fecha:</strong> {$info['fecha']}</p>
+          <p><strong>Encargado:</strong> {$info['nombre_encargado']} {$info['apellidos_encargado']}</p>
+        </div>
+
+        <!-- 🔸 Botones de exportación -->
+        <div class='export-buttons'>
+          <form action='../export/funcion_exportar_excel.php' method='POST' target='_blank'>
+            <input type='hidden' name='id_listado' value='{$id_listado}'>
+            <button type='submit' class='btn-export excel'>📊 Exportar Excel</button>
+          </form>
+
+          <form action='../export/funcion_exportar_pdf.php' method='POST' target='_blank'>
+            <input type='hidden' name='id_listado' value='{$id_listado}'>
+            <button type='submit' class='btn-export pdf'>📄 Exportar PDF</button>
+          </form>
+        </div>";
       }
 
-      tablaListados.style.display = 'none';
-      contenedorAsistencias.style.display = 'block';
-      btnVolver.style.display = 'inline-block';
+      echo "<h2>Asistencias del listado</h2>";
 
-      tituloListado.style.display = 'none';
-    })
-    .catch(err => {
-      console.error('Error al cargar asistencias:', err);
-      tbodyAsistencias.innerHTML = '<tr><td colspan="10">Error al cargar asistencias.</td></tr>';
+$sql_asistencias = "
+    SELECT 
+        t.id AS id_trabajador,
+        t.nombre,
+        t.apellidos,
+        t.dni,
+        a.asistencia,
+        a.Bandeja,
+        a.Horas,
+        a.Observaciones
+    FROM asistencias a
+    INNER JOIN trabajadores t ON a.id_trabajador = t.id
+    WHERE a.id_listado = '$id_listado'
+    GROUP BY a.id_trabajador
+    ORDER BY t.apellidos ASC, t.nombre ASC
+";
+
+      $res_asistencias = mysqli_query($conexion, $sql_asistencias);
+
+      echo "<div class='tabla-responsive'>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Apellidos</th>
+                    <th>DNI</th>
+                    <th>Asistencia</th>
+                    <th>Bandejas</th>
+                    <th>Horas</th>
+                    <th>Observaciones</th>
+                  </tr>
+                </thead>
+                <tbody>";
+
+      if ($res_asistencias && mysqli_num_rows($res_asistencias) > 0) {
+        while ($fila = mysqli_fetch_assoc($res_asistencias)) {
+          echo "<tr>
+                  <td>{$fila['nombre']}</td>
+                  <td>{$fila['apellidos']}</td>
+                  <td>{$fila['dni']}</td>
+                  <td>" . ($fila['asistencia'] === 'si' ? '✅' : '❌') . "</td>
+                  <td>{$fila['Bandeja']}</td>
+                  <td>{$fila['Horas']}</td>
+                  <td>{$fila['Observaciones']}</td>
+                </tr>";
+        }
+      } else {
+        echo "<tr><td colspan='7' class='mensaje-vacio'>No hay registros de asistencia.</td></tr>";
+      }
+
+      echo "</tbody></table></div>";
+    }
+
+    else {
+      echo "<p class='mensaje-vacio'>Selecciona una fecha para ver los listados.</p>";
+    }
+    ?>
+  </main>
+
+  <?php include(__DIR__ . '/footer.php'); ?>
+
+  <script>
+    flatpickr("#fecha_buscar", {
+      dateFormat: "Y-m-d",
+      defaultDate: "<?php echo $fecha ?: date('Y-m-d'); ?>",
+      allowInput: false
     });
-}
 
-// Menú desplegable por fila
-document.addEventListener('click', function (e) {
-  // Cerrar cualquier menú abierto
-  document.querySelectorAll('.menu-opciones').forEach(menu => {
-    menu.style.display = 'none';
-  });
-
-  // Si se hace clic en el botón de opciones (⋮)
-  if (e.target.matches('.btn-opciones')) {
-    e.stopPropagation();
-
-    const btn = e.target;
-    const row = btn.closest('tr');
-    const idListado = row.querySelector('td').textContent.trim();
-
-    let menu = document.getElementById('menu-flotante');
-    if (!menu) {
-      menu = document.createElement('div');
-      menu.id = 'menu-flotante';
-      menu.className = 'menu-opciones';
-      document.body.appendChild(menu);
-    }
-
-    menu.innerHTML = `
-      <button class="menu-item exportar-pdf" data-id="${idListado}">Exportar PDF</button>
-      <button class="menu-item exportar-excel" data-id="${idListado}">Exportar Excel</button>
-      <button class="menu-item ver-asistencias" data-id="${idListado}">Ver listados</button>
-    `;
-
-    menu.dataset.idListado = idListado;
-
-    const rect = btn.getBoundingClientRect();
-    menu.style.left = `${rect.left}px`;
-    menu.style.top = `${rect.bottom + window.scrollY}px`;
-    menu.style.display = 'block';
-  }
-
-  // Si se hace clic en una opción del menú
-  if (e.target.matches('.menu-item')) {
-    const idListado = e.target.dataset.id;
-
-    if (e.target.classList.contains('exportar-pdf')) {
-      // Mostrar modal antes de exportar
-      exportarTipo = 'pdf';
-      exportarIdListado = idListado;
-      modalText.textContent = `¿Quieres exportar el listado #${idListado} en PDF?`;
-      modal.style.display = 'flex';
-    }
-
-    if (e.target.classList.contains('exportar-excel')) {
-      // Mostrar modal antes de exportar
-      exportarTipo = 'excel';
-      exportarIdListado = idListado;
-      modalText.textContent = `¿Quieres exportar el listado #${idListado} en Excel?`;
-      modal.style.display = 'flex';
-    }
-
-    if (e.target.classList.contains('ver-asistencias')) {
-      mostrarAsistencias(idListado);
-    }
-
-    // Cerrar el menú después de una acción
-    const menu = document.getElementById('menu-flotante');
-    if(menu) menu.style.display = 'none';
-  }
-});
-
-// Botón Confirmar modal
-btnConfirmar.addEventListener('click', () => {
-  if (exportarTipo && exportarIdListado) {
-    let url = '';
-    if (exportarTipo === 'pdf') {
-      url = `../export/funcion_exportar_pdf.php?id_listado=${exportarIdListado}`;
-    } else if (exportarTipo === 'excel') {
-      url = `../export/funcion_exportar_excel.php?id_listado=${exportarIdListado}`;
-    }
-    window.open(url, '_blank');
-  }
-  modal.style.display = 'none';
-  exportarTipo = null;
-  exportarIdListado = null;
-});
-
-// Botón Cancelar modal
-btnCancelar.addEventListener('click', () => {
-  modal.style.display = 'none';
-  exportarTipo = null;
-  exportarIdListado = null;
-});
-
-function toggleMenu() {
-  const menu = document.getElementById('menuDropdown');
-  menu.classList.toggle('show');
-}
-
-// Cierra el menú si haces clic fuera
-document.addEventListener('click', function (e) {
-  const menu = document.getElementById('menuDropdown');
-  const toggle = document.querySelector('.menu-toggle');
-
-  if (!menu.contains(e.target) && e.target !== toggle) {
-    menu.classList.remove('show');
-  }
-});
-
-// Cierra el menú al hacer clic en un enlace
-document.querySelectorAll('.menu-dropdown a').forEach(enlace => {
-  enlace.addEventListener('click', () => {
-    document.getElementById('menuDropdown').classList.remove('show');
-  });
-});
-
-const btnVolver = document.getElementById('btn_volver_listados');
-
-btnVolver.addEventListener('click', () => {
-  contenedorAsistencias.style.display = 'none';
-  tablaListados.style.display = 'table';
-  btnVolver.style.display = 'none';
-  tituloListado.style.display = 'block';
-
-  if (seleccionado) {
-    seleccionado.classList.remove('selected');
-    seleccionado = null;
-  }
-  inputIdListado.value = '';
-});
-
-</script>
-
-  <?php include(__DIR__ . '/../views/footer.php'); ?>
+    document.getElementById("btnBuscar").addEventListener("click", () => {
+      const fecha = document.getElementById("fecha_buscar").value.trim();
+      if (fecha) window.location.href = "?fecha=" + encodeURIComponent(fecha);
+    });
+  </script>
 </body>
-
 </html>
