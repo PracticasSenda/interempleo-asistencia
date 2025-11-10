@@ -1,203 +1,173 @@
 <?php
-session_start(); // para mostrar nombre del encargado si está logueado
-include(__DIR__ . '/../config/db.php');
+// export/funcion_exportar_pdf.php
+// Muestra el PDF en la pestaña nueva (inline). Requiere FPDF.
 
-if (!isset($_GET['id_listado']) || empty($_GET['id_listado'])) {
-    die("ID de listado no especificado");
+if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
+
+require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../fpdf/fpdf.php';
+
+// Asegurar charset de la conexión
+if (isset($conexion) && $conexion instanceof mysqli) {
+    mysqli_set_charset($conexion, 'utf8mb4');
 }
 
-$id_listado = intval($_GET['id_listado']);
-
-// Obtener el nombre del encargado desde la tabla usuarios
-$sql_encargado = "SELECT u.nombre 
-                  FROM listados_asistencias la
-                  JOIN usuarios u ON la.id_encargado = u.id
-                  WHERE la.id = $id_listado
-                  LIMIT 1";
-
-$result_encargado = mysqli_query($conexion, $sql_encargado);
-if ($result_encargado && mysqli_num_rows($result_encargado) > 0) {
-    $row_encargado = mysqli_fetch_assoc($result_encargado);
-    $_SESSION['encargado'] = $row_encargado['nombre'];
-} else {
-    $_SESSION['encargado'] = 'Desconocido';
+// ---- Seguridad mínima de sesión ----
+if (!isset($_SESSION['id'])) {
+    header('Content-Type: text/plain; charset=utf-8');
+    exit('Acceso no autorizado.');
 }
 
-// Consulta de datos
-$sql = "SELECT a.id, a.empresa, a.fecha, a.producto, a.asistencia,
-               CONCAT(t.nombre, ' ', t.apellidos) AS nombre_trabajador,
-               a.dni, a.bandeja, a.horas, a.observaciones
-        FROM asistencias a
-        JOIN trabajadores t ON a.id_trabajador = t.id
-        WHERE a.id_listado = $id_listado";
-
-$result = mysqli_query($conexion, $sql);
-if (!$result) {
-    die("Error en la consulta: " . mysqli_error($conexion));
+// ---- 1) Recoger id_listado (POST > GET > sesión) ----
+$id_listado = 0;
+if (isset($_POST['id_listado'])) {
+    $id_listado = (int) $_POST['id_listado'];
+} elseif (isset($_GET['id_listado'])) {
+    $id_listado = (int) $_GET['id_listado'];
+} elseif (isset($_SESSION['ultimo_id_listado'])) {
+    $id_listado = (int) $_SESSION['ultimo_id_listado'];
 }
 
-require(__DIR__ . '/../fpdf/fpdf.php');
+if ($id_listado <= 0) {
+    header('Content-Type: text/plain; charset=utf-8');
+    exit('No se recibió el parámetro id_listado.');
+}
+$_SESSION['ultimo_id_listado'] = $id_listado; // respaldo útil
 
-class PDF extends FPDF
-{
-    function Header()
-    {
-        if (file_exists('logo.png')) {
-            $this->Image('logo.png', 10, 6, 20);
+// ---- 2) Consultas preparadas ----
+
+// Info del parte
+$stmt_info = $conexion->prepare("
+    SELECT l.empresa, l.producto, l.fecha, l.firma_encargado, l.fecha_firma, l.ip_firma,
+           u.nombre AS encargado, u.apellidos, u.rol
+    FROM listados_asistencias l
+    JOIN usuarios u ON l.id_encargado = u.id
+    WHERE l.id = ?
+    LIMIT 1
+");
+$stmt_info->bind_param("i", $id_listado);
+$stmt_info->execute();
+$res_info = $stmt_info->get_result();
+if (!$res_info || $res_info->num_rows === 0) {
+    header('Content-Type: text/plain; charset=utf-8');
+    exit('No se encontró el listado.');
+}
+$info = $res_info->fetch_assoc();
+$stmt_info->close();
+
+// Asistencias
+$stmt_asist = $conexion->prepare("
+    SELECT t.nombre, t.apellidos, t.dni, a.asistencia, a.Bandeja, a.Horas, a.Observaciones
+    FROM asistencias a
+    JOIN trabajadores t ON a.id_trabajador = t.id
+    WHERE a.id_listado = ?
+    ORDER BY t.apellidos ASC, t.nombre ASC
+");
+$stmt_asist->bind_param("i", $id_listado);
+$stmt_asist->execute();
+$asist_res = $stmt_asist->get_result();
+
+// ---- 3) Clase PDF personalizada ----
+class PDF_Interempleo extends FPDF {
+    function Header() {
+        $logoPath = __DIR__ . '/../img/logo_interempleo.jpg';
+        if (is_file($logoPath)) {
+            $this->Image($logoPath, 10, 8, 25);
         }
-
-        $this->SetFont('Arial', 'B', 16);
-        $titulo = utf8_decode('Listado de Asistencias');
-        $ancho = $this->GetStringWidth($titulo) + 6;
-        $this->SetX(($this->w - $ancho) / 2);
-        $this->Cell($ancho, 10, $titulo, 0, 1, 'C');
-
-        $this->Ln(4);
+        $this->SetFont('Arial', 'B', 14);
+        $this->SetTextColor(255, 103, 29);
+        $this->Cell(0, 10, utf8_decode('PARTE DE ASISTENCIA'), 0, 1, 'C');
 
         $this->SetFont('Arial', '', 10);
-        $encargado = isset($_SESSION['encargado']) ? $_SESSION['encargado'] : 'Desconocido';
-        $fecha = date('d/m/Y');
-        $textoInfo = utf8_decode("Encargado: $encargado - Generado el $fecha");
-
-        $anchoInfo = $this->GetStringWidth($textoInfo) + 6;
-        $this->SetX(($this->w - $anchoInfo) / 2);
-        $this->Cell($anchoInfo, 8, $textoInfo, 0, 1, 'C');
-
-        $this->Ln(5);
+        $this->SetTextColor(0, 0, 0);
+        $this->Cell(0, 6, utf8_decode('Interempleo · Gestión de Asistencia'), 0, 1, 'C');
+        $this->Ln(10);
     }
-
-    function Footer()
-    {
+    function Footer() {
         $this->SetY(-15);
         $this->SetFont('Arial', 'I', 8);
-        $this->Cell(0, 10, utf8_decode('Página ') . $this->PageNo(), 0, 0, 'C');
-    }
-
-   function TablaAsistencias($header, $data)
-{
-    $this->SetFillColor(52, 73, 94);
-    $this->SetTextColor(255);
-    $this->SetFont('Arial', 'B', 9);
-
-    $w = [20, 20, 25, 18, 30, 22, 20, 15, 55];
-
-    $available = $this->w - $this->lMargin - $this->rMargin;
-    $total = array_sum($w);
-    if ($total > 0 && $total != $available) {
-        $scale = $available / $total;
-        foreach ($w as $i => $wi) {
-            $w[$i] = $wi * $scale;
-        }
-    }
-
-    for ($i = 0; $i < count($header); $i++) {
-        $this->Cell($w[$i], 7, utf8_decode($header[$i]), 1, 0, 'C', true);
-    }
-    $this->Ln();
-
-    $this->SetFont('Arial', '', 8);
-    $this->SetFillColor(245, 245, 245);
-    $this->SetTextColor(0);
-    $fill = false;
-
-    foreach ($data as $row) {
-    $fields = [
-        utf8_decode($row['empresa']),
-        utf8_decode($row['fecha']),
-        utf8_decode($row['producto']),
-        utf8_decode($row['asistencia']),
-        utf8_decode($row['nombre_trabajador']),
-        utf8_decode($row['dni']),
-        utf8_decode($row['bandeja']),
-        utf8_decode($row['horas']),
-        utf8_decode($row['observaciones']),
-    ];
-
-    // 1️⃣ Calculamos la altura máxima de la fila
-    $nbLines = [];
-    foreach ($fields as $i => $text) {
-        $nbLines[] = $this->NbLines($w[$i], $text);
-    }
-    $maxNbLines = max($nbLines);
-    $h = 5 * $maxNbLines;
-
-    // 2️⃣ Guardamos posición inicial de la fila
-    $yStart = $this->GetY();
-
-    // 3️⃣ Dibujamos cada celda
-    for ($i = 0; $i < count($fields); $i++) {
-        $x = $this->GetX();
-        $this->MultiCell($w[$i], $h / $nbLines[$i], $fields[$i], 1, 'C', $fill);
-        $this->SetXY($x + $w[$i], $yStart);
-    }
-
-    // 4️⃣ Avanzamos a la siguiente fila
-    $this->Ln($h);
-    $fill = !$fill;
-}
-
-
-    $this->Cell(array_sum($w), 0, '', 'T');
-    $this->Ln(2);
-}
-
-
-    function NbLines($w, $txt)
-    {
-        $cw = &$this->CurrentFont['cw'];
-        if ($w == 0)
-            $w = $this->w - $this->rMargin - $this->x;
-        $wmax = ($w - 2 * $this->cMargin) * 1000 / $this->FontSize;
-        $s = str_replace("\r", '', $txt);
-        $nb = strlen($s);
-        if ($nb > 0 && $s[$nb - 1] == "\n")
-            $nb--;
-        $sep = -1;
-        $i = 0;
-        $j = 0;
-        $l = 0;
-        $nl = 1;
-        while ($i < $nb) {
-            $c = $s[$i];
-            if ($c == "\n") {
-                $i++;
-                $sep = -1;
-                $j = $i;
-                $l = 0;
-                $nl++;
-                continue;
-            }
-            if ($c == ' ')
-                $sep = $i;
-            $l += $cw[$c];
-            if ($l > $wmax) {
-                if ($sep == -1) {
-                    if ($i == $j)
-                        $i++;
-                } else
-                    $i = $sep + 1;
-                $sep = -1;
-                $j = $i;
-                $l = 0;
-                $nl++;
-            } else
-                $i++;
-        }
-        return $nl;
+        $this->SetTextColor(130, 130, 130);
+        $this->Cell(0, 10, utf8_decode('Documento generado automáticamente · ' . date('d/m/Y')), 0, 0, 'C');
     }
 }
 
-$pdf = new PDF();
+// ---- 4) Construcción del PDF ----
+$pdf = new PDF_Interempleo('L', 'mm', 'A4');
 $pdf->AddPage();
 
-$header = ['Empresa', 'Fecha', 'Producto', 'Asistencia', 'Trabajador', 'DNI', 'Bandejas', 'Horas', 'Observaciones'];
+// Info cabecera
+$pdf->SetFont('Arial', '', 11);
+$pdf->Cell(30, 8, utf8_decode('Empresa:'), 0, 0);
+$pdf->SetFont('Arial', 'B', 11);
+$pdf->Cell(60, 8, utf8_decode($info['empresa']), 0, 0);
 
-$data = [];
-while ($row = mysqli_fetch_assoc($result)) {
-    $data[] = $row;
+$pdf->SetFont('Arial', '', 11);
+$pdf->Cell(25, 8, utf8_decode('Fecha:'), 0, 0);
+$pdf->SetFont('Arial', 'B', 11);
+$pdf->Cell(30, 8, utf8_decode($info['fecha']), 0, 1);
+
+$pdf->SetFont('Arial', '', 11);
+$pdf->Cell(30, 8, utf8_decode('Producto:'), 0, 0);
+$pdf->SetFont('Arial', 'B', 11);
+$pdf->Cell(60, 8, utf8_decode($info['producto']), 0, 0);
+
+$pdf->SetFont('Arial', '', 11);
+$pdf->Cell(25, 8, utf8_decode('Encargado:'), 0, 0);
+$pdf->SetFont('Arial', 'B', 11);
+$pdf->Cell(60, 8, utf8_decode($info['encargado'] . ' ' . $info['apellidos']), 0, 1);
+
+$pdf->Ln(4);
+
+// Cabecera de tabla
+$pdf->SetFillColor(255, 103, 29);
+$pdf->SetTextColor(255, 255, 255);
+$pdf->SetFont('Arial', 'B', 10);
+$headers = ['Nombre', 'Apellidos', 'DNI', 'Asistencia', 'Bandejas', 'Horas', 'Observaciones'];
+$widths  = [38,       40,          28,    28,           25,       25,      55];
+
+foreach ($headers as $i => $col) {
+    $pdf->Cell($widths[$i], 8, utf8_decode($col), 1, 0, 'C', true);
+}
+$pdf->Ln();
+
+// Filas
+$pdf->SetFont('Arial', '', 9);
+$pdf->SetTextColor(0, 0, 0);
+
+if ($asist_res && $asist_res->num_rows > 0) {
+    while ($fila = $asist_res->fetch_assoc()) {
+        $pdf->Cell($widths[0], 7, utf8_decode($fila['nombre']), 1);
+        $pdf->Cell($widths[1], 7, utf8_decode($fila['apellidos']), 1);
+        $pdf->Cell($widths[2], 7, $fila['dni'], 1);
+        $pdf->Cell($widths[3], 7, ($fila['asistencia'] === 'si' ? 'Presente' : 'Ausente'), 1);
+        $pdf->Cell($widths[4], 7, (string)$fila['Bandeja'], 1, 0, 'C');
+        $pdf->Cell($widths[5], 7, (string)$fila['Horas'], 1, 0, 'C');
+        // Evitar nulls
+        $obs = isset($fila['Observaciones']) ? (string)$fila['Observaciones'] : '';
+        $pdf->Cell($widths[6], 7, utf8_decode($obs), 1);
+        $pdf->Ln();
+    }
+} else {
+    $pdf->Cell(array_sum($widths), 7, utf8_decode('Sin registros'), 1, 1, 'C');
 }
 
-$pdf->TablaAsistencias($header, $data);
-$pdf->Output('D', 'asistencias_listado_' . $id_listado . '.pdf');
-exit();
-?>
+// Firma (si existe archivo)
+if (!empty($info['firma_encargado'])) {
+    $firma_path = __DIR__ . '/../storage/firmas/' . $info['firma_encargado'];
+    if (is_file($firma_path)) {
+        $pdf->Ln(12);
+        $y = $pdf->GetY();
+        // Imagen de firma
+        $pdf->Image($firma_path, 130, $y, 40);
+        // Línea y texto
+        $pdf->Ln(30);
+        $pdf->Line(120, $y + 32, 170, $y + 32);
+        $pdf->SetFont('Arial', 'I', 10);
+        $pdf->Cell(0, 8, utf8_decode('Firma del encargado'), 0, 1, 'C');
+    }
+}
+
+// ---- 5) Entregar el PDF al navegador (inline) ----
+$nombre = 'parte_' . $id_listado . '.pdf';
+$pdf->Output('I', $nombre);   // I = inline (muestra en la pestaña nueva)
+exit;

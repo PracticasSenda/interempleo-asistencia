@@ -241,12 +241,41 @@ if ($action === 'guardar_parte_completo') {
         if ($resTrab && mysqli_num_rows($resTrab) > 0) {
             $id_trabajador = mysqli_fetch_assoc($resTrab)['id'];
 
-            $sqlAsistencia = "INSERT INTO asistencias 
-                (id_listado, empresa, fecha, producto, asistencia, id_trabajador, dni, Bandeja, Horas, Observaciones)
-                VALUES 
-                ('$id_listado', '$empresa', '$fecha', '$producto', '$asistencia', '$id_trabajador', '$dni', '$bandeja', '$horas', '$observaciones')";
-            
-            mysqli_query($conexion, $sqlAsistencia);
+// Verificar si ya existe un registro para ese trabajador en este parte
+$check = mysqli_query($conexion, "
+    SELECT id FROM asistencias 
+    WHERE id_listado='$id_listado' AND id_trabajador='$id_trabajador'
+    LIMIT 1
+");
+
+if ($check && mysqli_num_rows($check) > 0) {
+    // 🔄 Si ya existe → actualizar los valores
+    $fila_existente = mysqli_fetch_assoc($check);
+    $id_asistencia = $fila_existente['id'];
+
+    $sqlAsistencia = "
+        UPDATE asistencias 
+        SET empresa='$empresa',
+            fecha='$fecha',
+            producto='$producto',
+            asistencia='$asistencia',
+            Bandeja='$bandeja',
+            Horas='$horas',
+            Observaciones='$observaciones'
+        WHERE id='$id_asistencia'
+    ";
+} else {
+    // ➕ Si no existe → insertar nuevo registro
+    $sqlAsistencia = "
+        INSERT INTO asistencias 
+            (id_listado, empresa, fecha, producto, asistencia, id_trabajador, dni, Bandeja, Horas, Observaciones)
+        VALUES 
+            ('$id_listado', '$empresa', '$fecha', '$producto', '$asistencia', '$id_trabajador', '$dni', '$bandeja', '$horas', '$observaciones')
+    ";
+}
+
+mysqli_query($conexion, $sqlAsistencia) or error_log('❌ Error SQL asistencia: ' . mysqli_error($conexion));
+
         } else {
             error_log("⚠️ Trabajador con DNI $dni no encontrado al guardar parte.");
         }

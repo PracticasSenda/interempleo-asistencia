@@ -1,0 +1,31 @@
+# ==========================================
+# 🚫 BLOQUEO TOTAL DE ACCESO PÚBLICO A LAS FIRMAS
+# ==========================================
+
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+
+<IfModule !mod_authz_core.c>
+    Deny from all
+</IfModule>
+
+# ==========================================
+# ✅ NOTA IMPORTANTE
+# ==========================================
+# - Este archivo evita que cualquier usuario acceda
+#   a las imágenes de firmas directamente por URL.
+# - Sin embargo, PHP y FPDF podrán leerlas internamente
+#   porque se accede al archivo desde el servidor,
+#   no desde una petición HTTP pública.
+# - Ejemplo bloqueado:
+#   ❌ https://tu-dominio.com/storage/firmas/firma_123.png
+# - Ejemplo permitido internamente:
+#   ✅ $pdf->Image(__DIR__ . '/../storage/firmas/firma_123.png');
+# ==========================================
+
+# Prevenir listado de archivos
+Options -Indexes
+
+# Desactivar ejecución de scripts por seguridad
+RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .phps
