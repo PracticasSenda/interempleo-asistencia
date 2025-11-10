@@ -1,3 +1,5 @@
+<link rel="stylesheet" href="../css/style-global.css">
+
 <?php
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -44,8 +46,8 @@ $tipo = $_GET['tipo'] ?? '';
            Nuevas asistencias
         </a>
 
-        <a href="../export/exportar_excel_pdf.php"
-           class="<?= ($pagina_actual === 'exportar_excel_pdf.php') ? 'activo' : '' ?>">
+        <a href="../views/gestionar-asistencia.php"
+           class="<?= ($pagina_actual === 'gestionar-asistencia.php') ? 'activo' : '' ?>">
            Gestionar asistencias
         </a>
 

@@ -1,6 +1,13 @@
 <?php
+// --- Configuración de seguridad para las cookies de sesión ---
+ini_set('session.cookie_httponly', 1);                 // Evita acceso JS
+ini_set('session.use_strict_mode', 1);                 // Evita reutilización de ID
+ini_set('session.cookie_samesite', 'Strict');          // Evita envío cross-site
+ini_set('session.cookie_secure', isset($_SERVER['HTTPS'])); // Solo por HTTPS si aplica
+
 session_start();
 
+// Si el usuario ya tiene sesión iniciada, redirigimos
 if (isset($_SESSION['nombre'])) {
   header("Location: ../views/asistencia.php");
   exit();
@@ -9,16 +16,32 @@ if (isset($_SESSION['nombre'])) {
 include(__DIR__ . '/../config/db.php');
 include(__DIR__ . '/../funciones/funciones.php');
 
-
 $error = "";
+
+// --- Control de intentos fallidos ---
+if (!isset($_SESSION['intentos'])) {
+  $_SESSION['intentos'] = 0;
+}
+
+// Si está bloqueado temporalmente
+if (isset($_SESSION['bloqueado_hasta']) && time() < $_SESSION['bloqueado_hasta']) {
+  $faltan = ceil(($_SESSION['bloqueado_hasta'] - time()) / 60);
+  die("⛔ Has superado el número máximo de intentos. Vuelve a intentarlo en $faltan minuto(s).");
+}
 
 if (isset($_POST['enviar'])) {
   $dni = mysqli_real_escape_string($conexion, strip_tags($_POST['dni']));
   $password = mysqli_real_escape_string($conexion, strip_tags($_POST['password']));
   $sesion = isset($_POST["sesion"]) ? "si" : "no";
+
+  // --- Verificar usuario ---
   if (validar_usuario($conexion, $dni, $password)) {
 
-    // Nueva versión: obtener también nombre y apellidos del usuario
+    // ✅ Reiniciar contador de intentos al iniciar sesión correctamente
+    $_SESSION['intentos'] = 0;
+    unset($_SESSION['bloqueado_hasta']);
+
+    // Obtener datos del usuario
     $consulta = "SELECT id, nombre, apellidos, rol FROM usuarios WHERE dni = ?";
     $stmt = $conexion->prepare($consulta);
     $stmt->bind_param("s", $dni);
@@ -37,44 +60,45 @@ if (isset($_POST['enviar'])) {
 
     $stmt->close();
 
+    // Guardar preferencia de sesión
+    $_SESSION['sesion'] = $sesion;
 
-
-    /*
-    $_SESSION['nombre'] = $dni;
-
-    // Obtener el rol del usuario
-    $consulta_rol = "SELECT rol FROM usuarios WHERE dni = '$dni'";
-    $resultado_rol = mysqli_query($conexion, $consulta_rol);
-
- 
-    
-    if ($resultado_rol && mysqli_num_rows($resultado_rol) === 1) {
-        $fila_rol = mysqli_fetch_row($resultado_rol); // fetch_row devuelve array numérico
-        $_SESSION['rol'] = $fila_rol[0];
-    } else {
-        $_SESSION['rol'] = '';
-    }
-
-       */
-
-    // Guardamos si el usuario quiere mantener la sesión o no
-    $_SESSION['sesion'] = $sesion; // "si" o "no"
-
-    // Si no quiere mantener sesión, se crea una cookie temporal de 1 minuto
+    // --- Cookie temporal protegida ---
     if ($sesion === "no") {
-      setcookie("sesion_temporal", "1", time() + 300, "/");
+      setcookie(
+        "sesion_temporal",
+        "1",
+        [
+          'expires' => time() + 300, // 5 minutos
+          'path' => '/',
+          'secure' => isset($_SERVER['HTTPS']),
+          'httponly' => true,
+          'samesite' => 'Strict'
+        ]
+      );
     } else {
-      // Si se marcó que sí, eliminamos cualquier cookie anterior
       if (isset($_COOKIE["sesion_temporal"])) {
-        setcookie("sesion_temporal", "", time() - 3600, "/"); // borrar cookie
+        setcookie("sesion_temporal", "", time() - 3600, "/"); // eliminar cookie
       }
     }
 
     header("Location: ../views/asistencia.php");
     exit();
+  } else {
+    // ❌ Credenciales incorrectas
+    $_SESSION['intentos']++;
+
+    if ($_SESSION['intentos'] >= 5) {
+      $_SESSION['bloqueado_hasta'] = time() + 180; // Bloqueo 3 minutos
+      $error = "Has superado el número máximo de intentos. Espera 3 minutos.";
+    } else {
+      $restantes = 5 - $_SESSION['intentos'];
+      $error = "Credenciales incorrectas. Te quedan $restantes intento(s).";
+    }
   }
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="es">
