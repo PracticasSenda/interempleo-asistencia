@@ -1,0 +1,31 @@
+# ========================================
+# 🔐 Protección avanzada de firmas digitales
+# ========================================
+
+# 🚫 1️⃣ Bloquea cualquier acceso directo desde navegador
+<FilesMatch "\.(png|jpg|jpeg|gif)$">
+  Require all denied
+</FilesMatch>
+
+# ✅ 2️⃣ Permite acceso solo si la petición viene desde PHP (para FPDF o internos)
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Permitir solo si la petición viene desde localhost o el dominio del proyecto
+  RewriteCond %{HTTP_REFERER} ^http(s)?://(localhost|127\.0\.0\.1)(/interempleo-asistencia)? [NC]
+
+  # Permitir el acceso solo para scripts internos de PHP
+  RewriteCond %{THE_REQUEST} "internal_request" [NC]
+
+  # Excepción para FPDF (necesario para leer firmas dentro del servidor)
+  RewriteRule \.(png|jpg|jpeg|gif)$ - [L]
+
+  # Si no cumple las condiciones anteriores → Denegar
+  RewriteRule \.(png|jpg|jpeg|gif)$ - [F]
+</IfModule>
+
+# ========================================
+# 🧩 Nota:
+# - Las firmas solo podrán ser leídas por scripts PHP (ej. FPDF).
+# - Si un usuario intenta abrirlas por URL directa → 403 Forbidden.
+# ========================================

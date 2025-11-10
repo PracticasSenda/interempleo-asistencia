@@ -1,81 +1,106 @@
 <?php
+// export/funcion_exportar_pdf.php
+// Muestra el PDF en la pestaña nueva (inline). Requiere FPDF.
+
+if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
+
 require_once __DIR__ . '/../config/db.php';
-require_once __DIR__ . '/../fpdf/fpdf.php'; // ✅ versión clásica de FPDF
+require_once __DIR__ . '/../fpdf/fpdf.php';
 
-// ===============================================
-// 🔹 Validar parámetro
-// ===============================================
-if (!isset($_POST['id_listado'])) {
-    die('No se recibió el parámetro id_listado.');
+// Asegurar charset de la conexión
+if (isset($conexion) && $conexion instanceof mysqli) {
+    mysqli_set_charset($conexion, 'utf8mb4');
 }
-$id_listado = intval($_POST['id_listado']);
 
-// ===============================================
-// 🔹 Obtener información del parte
-// ===============================================
-$sql_info = "
-    SELECT l.empresa, l.producto, l.fecha, u.nombre AS encargado, u.apellidos
+// ---- Seguridad mínima de sesión ----
+if (!isset($_SESSION['id'])) {
+    header('Content-Type: text/plain; charset=utf-8');
+    exit('Acceso no autorizado.');
+}
+
+// ---- 1) Recoger id_listado (POST > GET > sesión) ----
+$id_listado = 0;
+if (isset($_POST['id_listado'])) {
+    $id_listado = (int) $_POST['id_listado'];
+} elseif (isset($_GET['id_listado'])) {
+    $id_listado = (int) $_GET['id_listado'];
+} elseif (isset($_SESSION['ultimo_id_listado'])) {
+    $id_listado = (int) $_SESSION['ultimo_id_listado'];
+}
+
+if ($id_listado <= 0) {
+    header('Content-Type: text/plain; charset=utf-8');
+    exit('No se recibió el parámetro id_listado.');
+}
+$_SESSION['ultimo_id_listado'] = $id_listado; // respaldo útil
+
+// ---- 2) Consultas preparadas ----
+
+// Info del parte
+$stmt_info = $conexion->prepare("
+    SELECT l.empresa, l.producto, l.fecha, l.firma_encargado, l.fecha_firma, l.ip_firma,
+           u.nombre AS encargado, u.apellidos, u.rol
     FROM listados_asistencias l
     JOIN usuarios u ON l.id_encargado = u.id
-    WHERE l.id = '$id_listado'
+    WHERE l.id = ?
     LIMIT 1
-";
-$res_info = mysqli_query($conexion, $sql_info);
-if (!$res_info || mysqli_num_rows($res_info) === 0) {
-    die('No se encontró el listado.');
+");
+$stmt_info->bind_param("i", $id_listado);
+$stmt_info->execute();
+$res_info = $stmt_info->get_result();
+if (!$res_info || $res_info->num_rows === 0) {
+    header('Content-Type: text/plain; charset=utf-8');
+    exit('No se encontró el listado.');
 }
-$info = mysqli_fetch_assoc($res_info);
+$info = $res_info->fetch_assoc();
+$stmt_info->close();
 
-// ===============================================
-// 🔹 Consultar asistencias
-// ===============================================
-$sql = "
+// Asistencias
+$stmt_asist = $conexion->prepare("
     SELECT t.nombre, t.apellidos, t.dni, a.asistencia, a.Bandeja, a.Horas, a.Observaciones
     FROM asistencias a
     JOIN trabajadores t ON a.id_trabajador = t.id
-    WHERE a.id_listado = '$id_listado'
-    ORDER BY t.apellidos ASC
-";
-$res = mysqli_query($conexion, $sql);
+    WHERE a.id_listado = ?
+    ORDER BY t.apellidos ASC, t.nombre ASC
+");
+$stmt_asist->bind_param("i", $id_listado);
+$stmt_asist->execute();
+$asist_res = $stmt_asist->get_result();
 
-// ===============================================
-// 🔸 Clase personalizada para encabezado/pie
-// ===============================================
+// ---- 3) Clase PDF personalizada ----
 class PDF_Interempleo extends FPDF {
-function Header() {
-    // 🔹 Logo real de Interempleo
-    $this->Image(__DIR__ . '/../img/logo_interempleo.jpg', 10, 8, 25); // (ruta relativa + ancho 25mm)
-    $this->SetFont('Arial', 'B', 14);
-    $this->SetTextColor(255, 103, 29);
-    $this->Cell(0, 10, utf8_decode("INTEREMPLEO - PARTE DE ASISTENCIA"), 0, 1, 'C');
-    $this->Ln(15); // separa el logo del texto
-}
+    function Header() {
+        $logoPath = __DIR__ . '/../img/logo_interempleo.jpg';
+        if (is_file($logoPath)) {
+            $this->Image($logoPath, 10, 8, 25);
+        }
+        $this->SetFont('Arial', 'B', 14);
+        $this->SetTextColor(255, 103, 29);
+        $this->Cell(0, 10, utf8_decode('PARTE DE ASISTENCIA'), 0, 1, 'C');
 
-
-
+        $this->SetFont('Arial', '', 10);
+        $this->SetTextColor(0, 0, 0);
+        $this->Cell(0, 6, utf8_decode('Interempleo · Gestión de Asistencia'), 0, 1, 'C');
+        $this->Ln(10);
+    }
     function Footer() {
         $this->SetY(-15);
         $this->SetFont('Arial', 'I', 8);
         $this->SetTextColor(130, 130, 130);
-        $this->Cell(0, 10, utf8_decode('Documento generado automáticamente por Interempleo · ' . date('d/m/Y')), 0, 0, 'C');
+        $this->Cell(0, 10, utf8_decode('Documento generado automáticamente · ' . date('d/m/Y')), 0, 0, 'C');
     }
 }
 
-// ===============================================
-// 🔸 Crear PDF (orientación horizontal)
-// ===============================================
+// ---- 4) Construcción del PDF ----
 $pdf = new PDF_Interempleo('L', 'mm', 'A4');
 $pdf->AddPage();
-$pdf->SetFont('Arial', '', 11);
-$pdf->SetTextColor(0, 0, 0);
 
-// ===============================================
-// 🔹 Información general del parte
-// ===============================================
+// Info cabecera
 $pdf->SetFont('Arial', '', 11);
 $pdf->Cell(30, 8, utf8_decode('Empresa:'), 0, 0);
 $pdf->SetFont('Arial', 'B', 11);
 $pdf->Cell(60, 8, utf8_decode($info['empresa']), 0, 0);
+
 $pdf->SetFont('Arial', '', 11);
 $pdf->Cell(25, 8, utf8_decode('Fecha:'), 0, 0);
 $pdf->SetFont('Arial', 'B', 11);
@@ -85,77 +110,64 @@ $pdf->SetFont('Arial', '', 11);
 $pdf->Cell(30, 8, utf8_decode('Producto:'), 0, 0);
 $pdf->SetFont('Arial', 'B', 11);
 $pdf->Cell(60, 8, utf8_decode($info['producto']), 0, 0);
+
 $pdf->SetFont('Arial', '', 11);
 $pdf->Cell(25, 8, utf8_decode('Encargado:'), 0, 0);
 $pdf->SetFont('Arial', 'B', 11);
 $pdf->Cell(60, 8, utf8_decode($info['encargado'] . ' ' . $info['apellidos']), 0, 1);
-$pdf->Ln(6);
 
-// ===============================================
-// 🔹 Cabecera de la tabla
-// ===============================================
+$pdf->Ln(4);
+
+// Cabecera de tabla
 $pdf->SetFillColor(255, 103, 29);
 $pdf->SetTextColor(255, 255, 255);
 $pdf->SetFont('Arial', 'B', 10);
-
 $headers = ['Nombre', 'Apellidos', 'DNI', 'Asistencia', 'Bandejas', 'Horas', 'Observaciones'];
-$widths  = [38, 40, 28, 28, 25, 25, 55]; // ajustado a formato horizontal
+$widths  = [38,       40,          28,    28,           25,       25,      55];
 
 foreach ($headers as $i => $col) {
     $pdf->Cell($widths[$i], 8, utf8_decode($col), 1, 0, 'C', true);
 }
 $pdf->Ln();
 
-// ===============================================
-// 🔹 Filas de asistencias
-// ===============================================
+// Filas
 $pdf->SetFont('Arial', '', 9);
 $pdf->SetTextColor(0, 0, 0);
 
-$total = $presentes = $ausentes = 0;
-$total_bandejas = $total_horas = 0;
-
-while ($fila = mysqli_fetch_assoc($res)) {
-    $pdf->Cell($widths[0], 7, utf8_decode($fila['nombre']), 1);
-    $pdf->Cell($widths[1], 7, utf8_decode($fila['apellidos']), 1);
-    $pdf->Cell($widths[2], 7, utf8_decode($fila['dni']), 1);
-    $pdf->Cell($widths[3], 7, $fila['asistencia'] === 'si' ? 'Presente' : 'Ausente', 1);
-    $pdf->Cell($widths[4], 7, $fila['Bandeja'], 1, 0, 'C');
-    $pdf->Cell($widths[5], 7, $fila['Horas'], 1, 0, 'C');
-    $pdf->Cell($widths[6], 7, utf8_decode($fila['Observaciones']), 1);
-    $pdf->Ln();
-
-    // Calcular totales
-    $total++;
-    if ($fila['asistencia'] === 'si') $presentes++;
-    else $ausentes++;
-    $total_bandejas += floatval($fila['Bandeja']);
-    $total_horas += floatval($fila['Horas']);
+if ($asist_res && $asist_res->num_rows > 0) {
+    while ($fila = $asist_res->fetch_assoc()) {
+        $pdf->Cell($widths[0], 7, utf8_decode($fila['nombre']), 1);
+        $pdf->Cell($widths[1], 7, utf8_decode($fila['apellidos']), 1);
+        $pdf->Cell($widths[2], 7, $fila['dni'], 1);
+        $pdf->Cell($widths[3], 7, ($fila['asistencia'] === 'si' ? 'Presente' : 'Ausente'), 1);
+        $pdf->Cell($widths[4], 7, (string)$fila['Bandeja'], 1, 0, 'C');
+        $pdf->Cell($widths[5], 7, (string)$fila['Horas'], 1, 0, 'C');
+        // Evitar nulls
+        $obs = isset($fila['Observaciones']) ? (string)$fila['Observaciones'] : '';
+        $pdf->Cell($widths[6], 7, utf8_decode($obs), 1);
+        $pdf->Ln();
+    }
+} else {
+    $pdf->Cell(array_sum($widths), 7, utf8_decode('Sin registros'), 1, 1, 'C');
 }
 
-// ===============================================
-// 🔹 Resumen final
-// ===============================================
-$pdf->Ln(6);
-$pdf->SetFont('Arial', 'B', 11);
-$pdf->SetTextColor(255, 103, 29);
-$pdf->Cell(0, 8, utf8_decode('Resumen del Parte'), 0, 1, 'L');
-$pdf->SetTextColor(0, 0, 0);
-$pdf->SetFont('Arial', '', 10);
-$pdf->Cell(60, 8, utf8_decode('Total de trabajadores:'), 0, 0);
-$pdf->Cell(20, 8, $total, 0, 1);
-$pdf->Cell(60, 8, utf8_decode('Presentes:'), 0, 0);
-$pdf->Cell(20, 8, $presentes, 0, 1);
-$pdf->Cell(60, 8, utf8_decode('Ausentes:'), 0, 0);
-$pdf->Cell(20, 8, $ausentes, 0, 1);
-$pdf->Cell(60, 8, utf8_decode('Total Bandejas:'), 0, 0);
-$pdf->Cell(20, 8, $total_bandejas, 0, 1);
-$pdf->Cell(60, 8, utf8_decode('Total Horas:'), 0, 0);
-$pdf->Cell(20, 8, $total_horas, 0, 1);
+// Firma (si existe archivo)
+if (!empty($info['firma_encargado'])) {
+    $firma_path = __DIR__ . '/../storage/firmas/' . $info['firma_encargado'];
+    if (is_file($firma_path)) {
+        $pdf->Ln(12);
+        $y = $pdf->GetY();
+        // Imagen de firma
+        $pdf->Image($firma_path, 130, $y, 40);
+        // Línea y texto
+        $pdf->Ln(30);
+        $pdf->Line(120, $y + 32, 170, $y + 32);
+        $pdf->SetFont('Arial', 'I', 10);
+        $pdf->Cell(0, 8, utf8_decode('Firma del encargado'), 0, 1, 'C');
+    }
+}
 
-// ===============================================
-// 🔹 Salida final
-// ===============================================
-$filename = 'parte_asistencia_' . date('Y-m-d') . '.pdf';
-$pdf->Output('D', $filename);
+// ---- 5) Entregar el PDF al navegador (inline) ----
+$nombre = 'parte_' . $id_listado . '.pdf';
+$pdf->Output('I', $nombre);   // I = inline (muestra en la pestaña nueva)
 exit;
