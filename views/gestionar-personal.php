@@ -1,10 +1,47 @@
 <?php
+
+
+
+
+// 🔸 Control de acceso, errores y configuración base
 // ===============================================
-// 🔸 Control de acceso y configuración base
-// ===============================================
+include(__DIR__ . '/../config/manejador_errores.php');
 include(__DIR__ . '/../auth/validar_sesion.php');
 include(__DIR__ . '/../config/db.php');
+
+if (!$conexion || $conexion->connect_error) {
+    http_response_code(500);
+    error_log("❌ Error de conexión a la base de datos: " . ($conexion->connect_error ?? 'desconocido'));
+    exit('Error interno del servidor. Inténtelo más tarde.');
+}
+
 include(__DIR__ . '/../config/csrf.php');
+
+// ===============================================
+// 🧿 Protección CSRF extendida
+// ===============================================
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    // Comprobar que las peticiones sensibles GET incluyan un token válido
+    $accionesSensibles = ['baja', 'alta', 'reactivar'];
+    if (isset($_GET['accion']) && in_array($_GET['accion'], $accionesSensibles, true)) {
+        if (!csrf_check($_GET['csrf'] ?? '')) {
+            http_response_code(403);
+            exit('CSRF token inválido o ausente.');
+        }
+    }
+};
+// ===============================================
+// 🧱 Cabeceras HTTP seguras
+// ===============================================
+header("X-Frame-Options: SAMEORIGIN");          // Evita clickjacking
+header("X-Content-Type-Options: nosniff");      // Evita detección errónea de MIME
+header("Referrer-Policy: strict-origin-when-cross-origin"); // Limita información del referer
+header("Permissions-Policy: geolocation=(), camera=()");    // Desactiva permisos innecesarios
+header("X-XSS-Protection: 1; mode=block");      // Activa filtro XSS en navegadores antiguos
+
+
+
+
 
 // Bandera de seguridad para las funciones
 define('APP_VALID', true);
@@ -31,14 +68,32 @@ if ($__tipo_req === 'encargados' && $rol !== 'administrador') {
     header('Location: gestionar-personal.php?tipo=trabajadores&code=perm_denegado');
     exit();
 }
+// ===============================================
+// ⚙️ Parámetros de vista (validados y seguros)
+// ===============================================
 
-// ===============================================
-// ⚙️ Parámetros de vista
-// ===============================================
-$tipo   = $_GET['tipo']   ?? 'trabajadores';
+// tipo: solo puede ser "trabajadores" o "encargados"
+$tipo = $_GET['tipo'] ?? 'trabajadores';
+if (!in_array($tipo, ['trabajadores', 'encargados'])) {
+    $tipo = 'trabajadores';
+}
+
+// estado: solo puede ser "activo", "inactivo" o "todos"
 $estado = $_GET['estado'] ?? 'activo';
-$q      = trim($_GET['q'] ?? '');
-$orden  = $_GET['orden']  ?? 'recientes';
+if (!in_array($estado, ['activo', 'inactivo', 'todos'])) {
+    $estado = 'activo';
+}
+
+// búsqueda q: limpiar caracteres peligrosos
+$q = trim($_GET['q'] ?? '');
+$q = htmlspecialchars($q, ENT_QUOTES, 'UTF-8');
+
+// orden: solo puede ser "recientes" o "alfabetico"
+$orden = $_GET['orden'] ?? 'recientes';
+if (!in_array($orden, ['recientes', 'alfabetico'])) {
+    $orden = 'recientes';
+}
+
 
 // Redirigir si no hay vista
 if (!isset($_GET['vista'])) {
@@ -73,8 +128,11 @@ $MSG = [
     'sin_permiso'    => 'No tienes permiso para esta acción.'
 ];
 
+
+//Redefinida funcion h() para mas seguridad 
+
 function h($s) {
-    return htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
+    return htmlspecialchars((string)$s, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5, 'UTF-8');
 }
 
 function redirect_with($params) {
@@ -210,8 +268,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$res = obtener_listado($conexion, $tipo, $estado, $q, $orden, $rol);
-$titulo = ($tipo === 'encargados') ? "Gestionar Encargados" : "Gestionar Trabajadores";
+try {
+    $res = obtener_listado($conexion, $tipo, $estado, $q, $orden, $rol);
+    $titulo = ($tipo === 'encargados') ? "Gestionar Encargados" : "Gestionar Trabajadores";
+} catch (Throwable $e) {
+    error_log("⚠️ Error inesperado en gestionar-personal.php: " . $e->getMessage());
+    http_response_code(500);
+    exit('Error interno del servidor. Por favor, intente más tarde.');
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="es">
