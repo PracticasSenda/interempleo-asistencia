@@ -3,8 +3,8 @@ ob_start();
 error_reporting(E_ERROR | E_PARSE);
 header('Content-Type: text/plain; charset=utf-8');
 
-include(__DIR__ . '/../config/db.php');
-include(__DIR__ . '/../funciones/funciones.php');
+include(__DIR__ . '/../db.php');
+include(__DIR__ . '/../../funciones/funciones.php');
 mysqli_set_charset($conexion, "utf8mb4");
 
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
@@ -203,7 +203,7 @@ $horas = (float) max(0, (float)($_POST['Horas'] ?? 0));
     exit;
 }
 
-/* ===========================================================
+/* ============================================================
    GUARDAR PARTE COMPLETO (usando listados_asistencias)
 ============================================================ */
 if ($action === 'guardar_parte_completo') {

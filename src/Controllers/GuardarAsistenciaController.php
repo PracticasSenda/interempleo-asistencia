@@ -1,9 +1,9 @@
 <?php
 // controllers/guardar_asistencia.php
 
-include(__DIR__ . '/../auth/validar_sesion.php');
-include(__DIR__ . '/../config/db.php');
-include(__DIR__ . '/../config/csrf.php');
+include(__DIR__ . '/ValidarSesionController.php');
+include(__DIR__ . '/../db.php');
+include(__DIR__ . '/../../config/csrf.php');
 
 // ===============================
 // 🔒 Seguridad básica
@@ -50,7 +50,7 @@ if (strpos($firma64, 'data:image/png;base64,') !== 0) {
 [$meta, $data] = explode(',', $firma64, 2);
 $firma_bin     = base64_decode($data);
 
-$dir_firmas = __DIR__ . '/../storage/firmas/';
+$dir_firmas = __DIR__ . '/../../storage/firmas/';
 if (!is_dir($dir_firmas)) {
     mkdir($dir_firmas, 0775, true);
 }
@@ -158,5 +158,5 @@ try {
 // (Si quieres borrar la firma tras generar el PDF, hazlo
 //  al final de export/funcion_exportar_pdf.php)
 // ===============================
-header('Location: ../export/funcion_exportar_pdf.php?id_listado=' . urlencode($id_listado));
+header('Location: ../../export/funcion_exportar_pdf.php?id_listado=' . urlencode($id_listado));
 exit;

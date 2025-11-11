@@ -15,7 +15,7 @@ $id_listado = $_GET['id_listado'] ?? null;
   <!-- Estilos -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <link rel="stylesheet" href="../css/gestionar-asistencia.css">
+  <link rel="stylesheet" href="../../public/css/gestionar-asistencia.css">
 </head>
 
 <body>

@@ -1,6 +1,6 @@
 <?php
 // /controllers/obtener_partes_fechas.php
-include(__DIR__ . '/../config/db.php');
+include(__DIR__ . '/../db.php');
 header('Content-Type: application/json; charset=utf-8');
 
 try {

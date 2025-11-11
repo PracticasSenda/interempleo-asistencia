@@ -1,3 +1,6 @@
 /fpdf/
 /vendor/
+/storage/
+/img/firmas/
+/export/pdf_partes/
 config/credenciales.env

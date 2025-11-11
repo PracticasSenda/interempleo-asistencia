@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="../css/style-global.css">
+<link rel="stylesheet" href="../../public/css/style-global.css">
 
 <?php
 if (session_status() === PHP_SESSION_NONE) {

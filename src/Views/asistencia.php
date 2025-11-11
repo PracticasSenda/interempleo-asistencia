@@ -11,9 +11,9 @@ include(__DIR__ . '/../config/csrf.php');
   <title>Parte de Asistencia - Interempleo</title>
 
   <!-- Estilos -->
-  <link rel="stylesheet" href="../css/style-global.css">
-  <link rel="stylesheet" href="../css/modal.css">
-  <link rel="stylesheet" href="../css/asistencia.css">
+  <link rel="stylesheet" href="../../public/css/style-global.css">
+  <link rel="stylesheet" href="../../public/css/modal.css">
+  <link rel="stylesheet" href="../../public/css/asistencia.css">
 
   <meta name="csrf-token" content="<?= htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') ?>">
 </head>
@@ -156,9 +156,9 @@ include(__DIR__ . '/../config/csrf.php');
 <?php include(__DIR__ . '/footer.php'); ?>
 
 <!-- ====================== Scripts ====================== -->
-<script src="../js/asistencia.js"></script>
+<script src="../public/js/asistencia.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
-<script src="../js/firma.js"></script>
+<script src="../public/js/firma.js"></script>
 
 <!-- Submit único: valida firma y empaqueta detalle_json -->
 <script>

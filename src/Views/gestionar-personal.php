@@ -284,8 +284,8 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= h($titulo) ?> - Interempleo</title>
-    <link rel="stylesheet" href="../css/style-global.css">
-    <link rel="stylesheet" href="../css/modal.css">
+    <link rel="stylesheet" href="../../public/css/style-global.css">
+    <link rel="stylesheet" href="../../public/css/modal.css">
 </head>
 
 <body>
@@ -428,8 +428,8 @@ try {
 <?php include(__DIR__ . '/modales-personal.php'); ?>
 
 <?php include(__DIR__ . '/footer.php'); ?>
-<script src="../js/modal.js"></script>
-<script src="../js/gestionar-personal.js"></script>
-<script src="../js/alertas.js"></script>
+<script src="../public/js/modal.js"></script>
+<script src="../public/js/gestionar-personal.js"></script>
+<script src="../public/js/alertas.js"></script>
 </body>
 </html>

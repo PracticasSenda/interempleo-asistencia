@@ -1,5 +1,5 @@
 <?php
-include(__DIR__ . '/../config/db.php');
+include(__DIR__ . '/../db.php');
 session_start();
 
 // ✅ Solo los administradores pueden usar este buscador

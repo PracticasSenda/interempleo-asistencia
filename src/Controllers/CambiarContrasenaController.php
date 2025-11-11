@@ -1,6 +1,6 @@
 <?php
 session_start();
-include(__DIR__ . '/../config/db.php');
+include(__DIR__ . '/../db.php');
 
 $mensaje = "";
 
@@ -166,7 +166,7 @@ a { font-size: 15px; color: var(--color-principal); text-decoration: none; }
     <?= $mensaje ?>
 </div>
 
-<?php include(__DIR__ . '/../views/footer.php'); ?>
+<?php include(__DIR__ . '/../Views/footer.php'); ?>
 
 <script>
 // 👁️ Mostrar/Ocultar contraseña
