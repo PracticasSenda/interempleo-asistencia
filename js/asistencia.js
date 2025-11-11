@@ -47,7 +47,9 @@ document.addEventListener("DOMContentLoaded", () => {
           item.addEventListener("click", () => {
             const dni = item.dataset.dni;
             const nombre = item.dataset.nombre;
-            agregarTrabajador(nombre, dni);
+            const id = item.dataset.id;   // ⬅️ viene del backend
+            agregarTrabajador(nombre, dni, id);
+
             buscador.value = "";
             sugerencias.innerHTML = "";
             sugerencias.style.display = "none";
@@ -67,7 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
   /* =====================================================
      🔸 FUNCIÓN PARA AGREGAR TRABAJADOR A LA TABLA
   ===================================================== */
-  function agregarTrabajador(nombre, dni) {
+  function agregarTrabajador(nombre, dni, idTrabajador) {
     if (!tablaBody) return;
 
     // Verificar si ya está en la tabla
@@ -75,23 +77,29 @@ document.addEventListener("DOMContentLoaded", () => {
       alert("Este trabajador ya está en la lista.");
       return;
     }
-
     const fila = document.createElement("tr");
     fila.id = "fila_" + dni;
+    fila.dataset.idTrabajador = idTrabajador || "";  // guardamos el id
+
     fila.innerHTML = `
-      <td><input type="checkbox" class="check-asistencia" data-dni="${dni}"></td>
-      <td>${nombre}</td>
-      <td>${dni}</td>
-      <td class="acciones">
-        <div class="menu-acciones">
-          <button type="button" class="btn-menu" aria-haspopup="true" aria-expanded="false" title="Acciones">⋮</button>
-          <div class="menu-list" role="menu">
-            <button type="button" class="menu-item btn-detalle-toggle" data-dni="${dni}" role="menuitem">Detalles</button>
-            <button type="button" class="menu-item btn-eliminar-fila" data-dni="${dni}" role="menuitem">Quitar trabajador</button>
-          </div>
-        </div>
-      </td>
-    `;
+  <td>
+    <input type="checkbox" class="check-asistencia" data-dni="${dni}">
+    <input type="hidden" class="id-trabajador" value="${idTrabajador || ''}">
+    <!-- estos dos hidden los creará luego ensureHiddenInputs() si aplicas valores globales -->
+  </td>
+  <td>${nombre}</td>
+  <td>${dni}</td>
+  <td class="acciones">
+    <div class="menu-acciones">
+      <button type="button" class="btn-menu" aria-haspopup="true" aria-expanded="false" title="Acciones">⋮</button>
+      <div class="menu-list" role="menu">
+        <button type="button" class="menu-item btn-detalle-toggle" data-dni="${dni}" role="menuitem">Detalles</button>
+        <button type="button" class="menu-item btn-eliminar-fila" data-dni="${dni}" role="menuitem">Quitar trabajador</button>
+      </div>
+    </div>
+  </td>
+`;
+
 
     const filaDetalle = document.createElement("tr");
     filaDetalle.classList.add("fila-detalle");
@@ -270,22 +278,45 @@ document.addEventListener("DOMContentLoaded", () => {
   const inputBandejas = document.querySelector("#bandejas_global");
   const inputHoras = document.querySelector("#horas_global");
 
+  function ensureHiddenInputs(tr, valBan, valHor) {
+    // Crea/actualiza inputs ocultos para que viajen en el submit
+    let hiddenBan = tr.querySelector('input[type="hidden"].input-bandejas');
+    if (!hiddenBan) {
+      hiddenBan = document.createElement('input');
+      hiddenBan.type = 'hidden';
+      hiddenBan.className = 'input-bandejas';
+      tr.appendChild(hiddenBan);
+    }
+    hiddenBan.value = valBan;
+
+    let hiddenHor = tr.querySelector('input[type="hidden"].input-horas');
+    if (!hiddenHor) {
+      hiddenHor = document.createElement('input');
+      hiddenHor.type = 'hidden';
+      hiddenHor.className = 'input-horas';
+      tr.appendChild(hiddenHor);
+    }
+    hiddenHor.value = valHor;
+  }
+
   if (btnAplicar) {
     btnAplicar.addEventListener("click", () => {
-      const bandejas = inputBandejas?.value.trim();
-      const horas = inputHoras?.value.trim();
+      const valBan = parseFloat(inputBandejas?.value) || 0;
+      const valHor = parseFloat(inputHoras?.value) || 0;
 
-      if (!bandejas && !horas) {
+      if (!valBan && !valHor) {
         mostrarBanner("⚠️ Debes introducir al menos un valor de bandejas u horas.", "error");
         return;
       }
 
       // Confirmación
-      if (!confirm(`¿Aplicar estos valores a los trabajadores con asistencia marcada?\n\nBandejas: ${bandejas || "—"}\nHoras: ${horas || "—"}`))
+      if (!confirm(`¿Aplicar estos valores a los trabajadores con asistencia marcada?\n\nBandejas: ${valBan || "—"}\nHoras: ${valHor || "—"}`)) {
         return;
+      }
 
-      const filas = document.querySelectorAll("tr[id^='fila_']");
-      if (filas.length === 0) {
+      // Solo filas principales (no las de detalle)
+      const filas = Array.from(document.querySelectorAll("#tabla_asistencia tbody tr[id^='fila_']"));
+      if (!filas.length) {
         mostrarBanner("⚠️ No hay trabajadores en la lista.", "error");
         return;
       }
@@ -296,32 +327,39 @@ document.addEventListener("DOMContentLoaded", () => {
         const dni = fila.id.replace("fila_", "");
         const checkAsistencia = fila.querySelector(`.check-asistencia[data-dni="${dni}"]`);
 
-        // Solo aplicar a los que están marcados
+        // 🔸 Aplica solo a presentes (si quieres a todos, quita esta condición)
         if (checkAsistencia && checkAsistencia.checked) {
-          const filaDetalle = fila.nextElementSibling;
+          // 1) Persistir valores en dataset (para sincronizaciones posteriores)
+          fila.dataset.bandejasPendientes = String(valBan);
+          fila.dataset.horasPendientes = String(valHor);
+          // También “finales” para resúmenes
+          fila.dataset.bandejaFinal = String(valBan);
+          fila.dataset.horasFinal = String(valHor);
 
-          // 🔸 Guardar valores en dataset (aunque el detalle no esté abierto)
-          fila.dataset.bandejasPendientes = bandejas || "";
-          fila.dataset.horasPendientes = horas || "";
+          // 2) Si la fila de detalle existe/está cargada, refleja valores visibles
+          const det = fila.nextElementSibling?.classList?.contains("fila-detalle") ? fila.nextElementSibling : null;
+          if (det) {
+            const inputB = det.querySelector(`input[name='Bandeja_${dni}']`);
+            const inputH = det.querySelector(`input[name='Horas_${dni}']`);
+            if (inputB) inputB.value = valBan;
+            if (inputH) inputH.value = valHor;
+          }
 
-          // 🔸 Si el detalle ya está abierto, actualiza sus campos
-          const inputB = filaDetalle?.querySelector(`input[name='Bandeja_${dni}']`);
-          const inputH = filaDetalle?.querySelector(`input[name='Horas_${dni}']`);
-          if (inputB && bandejas) inputB.value = bandejas;
-          if (inputH && horas) inputH.value = horas;
+          // 3) Asegurar inputs ocultos en la fila principal para que viajen en el POST
+          ensureHiddenInputs(fila, valBan, valHor);
 
           aplicados++;
         }
       });
 
-      if (aplicados === 0) {
+      if (!aplicados) {
         mostrarBanner("⚠️ No hay trabajadores con asistencia marcada.", "error");
         return;
       }
 
+      // Limpiar globales y feedback
       if (inputBandejas) inputBandejas.value = "";
       if (inputHoras) inputHoras.value = "";
-
       mostrarBanner(`✅ Valores aplicados a ${aplicados} trabajador${aplicados > 1 ? "es" : ""}.`, "ok");
     });
   }
@@ -616,14 +654,28 @@ document.addEventListener("DOMContentLoaded", () => {
         const inputH = detalle?.querySelector(`input[name='Horas_${dni}']`);
         const inputO = detalle?.querySelector(`input[name='Observaciones_${dni}']`);
 
+        // También leer los inputs ocultos que crea "Aplicar a todos"
+        const hiddenB = fila.querySelector('input.input-bandejas')?.value;
+        const hiddenH = fila.querySelector('input.input-horas')?.value;
+
+        // Prioridad: detalle visible → dataset final → ocultos → "0"
+        const vB = (inputB?.value ?? fila.dataset.bandejaFinal ?? hiddenB ?? "0");
+        const vH = (inputH?.value ?? fila.dataset.horasFinal ?? hiddenH ?? "0");
+
+        // Normaliza a número
+        const numB = Number(vB) || 0;
+        const numH = Number(vH) || 0;
+
         trabajadores.push({
           dni,
           asistencia,
-          bandeja: inputB?.value || fila.dataset.bandejaFinal || "0",
-          horas: inputH?.value || fila.dataset.horasFinal || "0",
+          // Si está ausente, forzar 0
+          bandeja: asistencia === "si" ? numB : 0,
+          horas: asistencia === "si" ? numH : 0,
           observaciones: inputO?.value || ""
         });
       });
+
 
       const formData = new FormData();
       formData.append("action", "guardar_parte_completo");

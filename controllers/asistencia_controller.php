@@ -8,14 +8,14 @@ include(__DIR__ . '/../funciones/funciones.php');
 mysqli_set_charset($conexion, "utf8mb4");
 
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
-
 /* ============================================================
    BUSCAR ENCARGADO (tabla usuarios)
 ============================================================ */
 if ($action === 'buscar_encargado') {
     $q = mysqli_real_escape_string($conexion, mb_strtoupper($_GET['q'] ?? '', 'UTF-8'));
 
-    $sql = "SELECT nombre, apellidos, dni 
+    // ⬅️ AÑADIMOS 'id' A LA SELECT
+    $sql = "SELECT id, nombre, apellidos, dni 
             FROM usuarios 
             WHERE rol = 'encargado' 
             AND (
@@ -34,14 +34,17 @@ if ($action === 'buscar_encargado') {
     }
 
     while ($fila = mysqli_fetch_assoc($res)) {
-        $nombreCompleto = htmlspecialchars($fila['nombre'] . ' ' . $fila['apellidos']);
-        $dni = htmlspecialchars($fila['dni']);
-        echo "<div class='sugerencia-item' data-nombre='$nombreCompleto' data-dni='$dni'>$nombreCompleto ($dni)</div>";
+        $id     = (int)$fila['id'];  // ⬅️ ID del encargado
+        $nombre = htmlspecialchars($fila['nombre'] . ' ' . $fila['apellidos'], ENT_QUOTES, 'UTF-8');
+        $dni    = htmlspecialchars($fila['dni'], ENT_QUOTES, 'UTF-8');
+
+        // ⬅️ IMPORTANTE: incluir data-id
+        echo "<div class='sugerencia-item' data-id='{$id}' data-nombre='{$nombre}' data-dni='{$dni}'>"
+           . "{$nombre} <small style='color:#666'>({$dni})</small>"
+           . "</div>";
     }
     exit;
 }
-
-
 
 /* ============================================================
    BUSCADOR DE TRABAJADORES (para sugerencias flotantes)
@@ -49,15 +52,15 @@ if ($action === 'buscar_encargado') {
 if ($action === 'buscar_trabajadores') {
     $q = mysqli_real_escape_string($conexion, mb_strtoupper($_GET['q'] ?? '', 'UTF-8'));
 
-    $sql = "SELECT nombre, apellidos, dni 
+    $sql = "SELECT id, nombre, apellidos, dni 
             FROM trabajadores 
             WHERE activo = 1 
-            AND (
+              AND (
                 UPPER(nombre) LIKE '%$q%' OR
                 UPPER(apellidos) LIKE '%$q%' OR
                 UPPER(CONCAT(nombre,' ',apellidos)) LIKE '%$q%' OR
                 UPPER(dni) LIKE '%$q%'
-            )
+              )
             ORDER BY nombre ASC 
             LIMIT 10";
 
@@ -69,12 +72,18 @@ if ($action === 'buscar_trabajadores') {
     }
 
     while ($fila = mysqli_fetch_assoc($res)) {
-        $nombreCompleto = htmlspecialchars($fila['nombre'] . ' ' . $fila['apellidos']);
-        $dni = htmlspecialchars($fila['dni']);
-        echo "<div class='sugerencia-item' data-nombre='$nombreCompleto' data-dni='$dni'>$nombreCompleto ($dni)</div>";
+        $id   = (int)$fila['id'];
+        $nomC = htmlspecialchars($fila['nombre'] . ' ' . $fila['apellidos'], ENT_QUOTES, 'UTF-8');
+        $dni  = htmlspecialchars($fila['dni'], ENT_QUOTES, 'UTF-8');
+
+        // ⬇️ Importante: incluir data-id
+        echo "<div class='sugerencia-item' data-id='{$id}' data-nombre='{$nomC}' data-dni='{$dni}'>
+                {$nomC} <small style='color:#666'>({$dni})</small>
+              </div>";
     }
     exit;
 }
+
 
 /* ============================================================
    CARGAR DETALLE DE TRABAJADOR

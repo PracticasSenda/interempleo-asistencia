@@ -142,6 +142,9 @@ include(__DIR__ . '/../config/csrf.php');
           <input type="hidden" name="firma_base64" id="firmaBase64">
         </div>
 
+        <!-- Hidden para detalle -->
+        <input type="hidden" name="detalle_json" id="detalle_json">
+
         <button type="submit" id="btnGuardarParte" class="btn-principal" disabled style="margin-top:12px;">
           Emitir parte
         </button>
@@ -157,15 +160,52 @@ include(__DIR__ . '/../config/csrf.php');
 <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
 <script src="../js/firma.js"></script>
 
-<!-- Evitar envío sin firma -->
+<!-- Submit único: valida firma y empaqueta detalle_json -->
 <script>
-document.getElementById("btnGuardarParte").addEventListener("click", function(e) {
-  if (!document.getElementById("firmaBase64").value) {
-    e.preventDefault();
-    alert("⚠️ Debe firmar antes de emitir el parte.");
-  }
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('form_asistencia');
+
+  form.addEventListener('submit', (e) => {
+    // Recorre SÓLO filas principales (no las de detalle)
+    const filas = Array.from(document.querySelectorAll(
+      '#tabla_asistencia tbody tr'
+    )).filter(tr => !tr.classList.contains('fila-detalle'));
+
+    const detalle = filas.map(tr => {
+      // en cada fila el checkbox tiene data-dni (así lo genera asistencia.js)
+      const chk    = tr.querySelector('.check-asistencia');
+      const dni    = chk?.dataset?.dni || tr.querySelector('td:nth-child(3)')?.textContent?.trim() || '';
+
+      // busca inputs del panel detalle si están abiertos / ya cargados
+      const filaDetalle = tr.nextElementSibling?.classList?.contains('fila-detalle')
+        ? tr.nextElementSibling : null;
+
+      const inpBan = filaDetalle?.querySelector('input[name^="Bandeja_"]');
+      const inpHor = filaDetalle?.querySelector('input[name^="Horas_"]');
+      const inpObs = filaDetalle?.querySelector('input[name^="Observaciones_"]') 
+                  || filaDetalle?.querySelector('textarea[name^="Observaciones_"]');
+
+      return {
+        dni: String(dni || '').trim(),
+        asistencia: (chk && chk.checked) ? 'si' : 'no',
+        bandejas: Number(inpBan?.value ?? 0) || 0,
+        horas:    Number(inpHor?.value ?? 0) || 0,
+        observaciones: String(inpObs?.value ?? '').trim()
+      };
+    }).filter(r => r.dni); // ← ahora validamos por dni, no por id
+
+    if (!detalle.length) {
+      e.preventDefault();
+      alert('No hay trabajadores en la lista.');
+      return;
+    }
+
+    document.getElementById('detalle_json').value = JSON.stringify(detalle);
+  });
 });
 </script>
+
+
 
 <!-- Desvanece el banner de éxito -->
 <script>
@@ -192,11 +232,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let lockPick = false;
 
-  // ⬇️ Ajusta AQUÍ la URL que tengas realmente en tu proyecto
-  // Si tu endpoint "bueno" es el antiguo que devuelve HTML:
-  // const ENDPOINT = '../ajax/acciones.php?action=buscar_encargado';
-  // Si usas el nuevo que devuelve JSON:
-  const ENDPOINT = '../controllers/buscar_encargado.php';
+  // ⬇️ Ajusta AQUÍ la URL real de tu endpoint
+  // const ENDPOINT = '../ajax/acciones.php?action=buscar_encargado'; // si devuelve HTML
+  const ENDPOINT = '../controllers/buscar_encargado.php';              // si devuelve JSON
 
   // ---------- BÚSQUEDA ----------
   input.addEventListener("input", async () => {
@@ -238,10 +276,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       } catch(_) { /* no era JSON */ }
 
-      // 2) Si no había JSON válido, damos por hecho que es HTML
+      // 2) Si no había JSON válido, tratamos como HTML
       if (!rendered) {
         box.innerHTML = raw.trim();
-        // Si el HTML no pone data-label, usaremos textContent al seleccionar
         box.style.display = box.innerHTML ? "block" : "none";
       }
     } catch (err) {
@@ -253,7 +290,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // ---------- SELECCIÓN ----------
   const pick = (node) => {
     const id    = (node.dataset.id || "").trim();
-    // si no tiene data-label (HTML legado), usamos su texto
     const label = (node.dataset.label || node.textContent || "").trim();
     if (!id || !label) return;
 
@@ -262,13 +298,11 @@ document.addEventListener("DOMContentLoaded", () => {
     inputHidden.value = id;
     box.style.display = "none";
 
-    // feedback visual
     input.style.border = "2px solid #2ecc71";
     input.style.background = "#e8f9ef";
     setTimeout(() => { input.style.border = ""; input.style.background = ""; }, 1200);
   };
 
-  // usamos mousedown y click (por si algún estilo impide uno u otro)
   box.addEventListener("mousedown", (e) => {
     const node = e.target.closest("[data-id]");
     if (!node) return;
@@ -281,12 +315,11 @@ document.addEventListener("DOMContentLoaded", () => {
     pick(node);
   });
 
-  // cerrar al hacer click fuera
   document.addEventListener("click", (e) => {
     if (!e.target.closest(".campo-encargado")) box.style.display = "none";
   });
 
-  // ---------- VALIDACIÓN SUBMIT ----------
+  // (Este submit convive con el de firma+detalle sin problema)
   form.addEventListener("submit", (e) => {
     if (!(inputHidden.value || "").trim()) {
       e.preventDefault();
@@ -297,7 +330,6 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 <?php endif; ?>
-
 
 </body>
 </html>
