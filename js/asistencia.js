@@ -648,7 +648,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const dni = fila.id.replace("fila_", "");
         const checkAsistencia = fila.querySelector(".check-asistencia");
         const asistencia = checkAsistencia?.checked ? "si" : "no";
-
         const detalle = fila.nextElementSibling;
         const inputB = detalle?.querySelector(`input[name='Bandeja_${dni}']`);
         const inputH = detalle?.querySelector(`input[name='Horas_${dni}']`);
@@ -658,22 +657,31 @@ document.addEventListener("DOMContentLoaded", () => {
         const hiddenB = fila.querySelector('input.input-bandejas')?.value;
         const hiddenH = fila.querySelector('input.input-horas')?.value;
 
-        // Prioridad: detalle visible → dataset final → ocultos → "0"
-        const vB = (inputB?.value ?? fila.dataset.bandejaFinal ?? hiddenB ?? "0");
-        const vH = (inputH?.value ?? fila.dataset.horasFinal ?? hiddenH ?? "0");
+        /**
+         * PRIORIDAD CORREGIDA:
+         * 1) Si hay input de detalle y NO está vacío, usarlo
+         * 2) Si no, usar dataset.*Final (lo que puso "Aplicar a todos")
+         * 3) Si no, usar ocultos
+         * 4) Si no, "0"
+         */
+        const rawB = (inputB && inputB.value !== "") ? inputB.value
+          : (fila.dataset.bandejaFinal ?? hiddenB ?? "0");
+        const rawH = (inputH && inputH.value !== "") ? inputH.value
+          : (fila.dataset.horasFinal ?? hiddenH ?? "0");
 
-        // Normaliza a número
-        const numB = Number(vB) || 0;
-        const numH = Number(vH) || 0;
+        // Normaliza a número seguro
+        const numB = isNaN(Number(rawB)) ? 0 : Number(rawB);
+        const numH = isNaN(Number(rawH)) ? 0 : Number(rawH);
+
 
         trabajadores.push({
           dni,
           asistencia,
-          // Si está ausente, forzar 0
           bandeja: asistencia === "si" ? numB : 0,
           horas: asistencia === "si" ? numH : 0,
           observaciones: inputO?.value || ""
         });
+
       });
 
 

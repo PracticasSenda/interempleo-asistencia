@@ -53,8 +53,14 @@
 .sugerencia-item.sin-resultados { color: #888; cursor: default; }
 
 /* Tabla asistencia */
-.tabla-container { margin-top: 1rem;    position: relative;
-  overflow: visible !important;}
+.tabla-container {
+  margin-top: 1rem;
+  position: relative;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch; /* scroll suave en móvil */
+}
+
 .tabla-asistencia {
    margin-bottom: 3rem;
   width: 100%;
@@ -546,3 +552,51 @@ td.acciones {
   margin: 2px 0;
   font-size: 0.9rem;
 }
+/* =====================================================
+📱 Ajustes extra de responsive para asistencia
+===================================================== */
+@media (max-width: 480px) {
+
+  /* Info general: todas las filas en 1 columna */
+  .info-general {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  /* Detalle bandejas/horas en una sola columna */
+  .detalle-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Contenedor de botones finales: todo en columna */
+  .acciones-finales {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
+    text-align: center;
+  }
+
+  .acciones-finales .btn-principal,
+  .acciones-finales .btn-secundario {
+    width: 100%;
+  }
+
+  /* Tabla de asistencia un poco más compacta */
+  .tabla-asistencia {
+    font-size: 0.8rem;
+  }
+
+  .tabla-asistencia th,
+  .tabla-asistencia td {
+    padding: 0.4rem;
+  }
+
+  /* Menú de acciones en la tabla más fácil de pulsar */
+  .btn-menu {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+    line-height: 34px;
+  }
+}
+

@@ -659,3 +659,50 @@ tr:nth-child(even) {
 .sugerencias div:hover {
   background: #f0f0f0;
 }
+/* =========================================================
+📱 Ajustes finos para móviles muy pequeños
+========================================================= */
+@media (max-width: 480px) {
+
+    body {
+        font-size: 0.95rem;
+    }
+
+    .wrap {
+        margin: 8px auto;
+        padding: 0 10px;
+    }
+
+    .barra-superior {
+        padding: 0.8rem 1rem;
+        font-size: 1.1rem;
+    }
+
+    .lado-izquierdo p {
+        font-size: 1.05rem;
+    }
+
+    .bienvenida {
+        font-size: 0.85rem;
+    }
+
+    /* Tablas más compactas */
+    table {
+        font-size: 0.8rem;
+    }
+
+    th,
+    td {
+        padding: 4px;
+        word-break: break-word; /* Evita que DNI, nombres largos etc. rompan el layout */
+    }
+
+    /* Botones a ancho completo en móvil */
+    .btn,
+    .btn-principal,
+    .btn-secundario {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
