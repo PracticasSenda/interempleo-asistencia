@@ -38,10 +38,17 @@ $_SESSION['ultimo_id_listado'] = $id_listado; // respaldo útil
 
 // ---- 2) Consultas preparadas ----
 
-// Info del parte
+// Info del parte (incluye totales del listado)
 $stmt_info = $conexion->prepare("
-    SELECT l.empresa, l.producto, l.fecha, l.firma_encargado, l.fecha_firma, l.ip_firma,
-           u.nombre AS encargado, u.apellidos, u.rol
+    SELECT 
+      l.empresa, l.producto, l.fecha,
+      l.firma_encargado, l.fecha_firma, l.ip_firma,
+      u.nombre AS encargado, u.apellidos, u.rol,
+      COALESCE(l.total_trabajadores, 0) AS total_trabajadores,
+      COALESCE(l.total_presentes,    0) AS total_presentes,
+      COALESCE(l.total_ausentes,     0) AS total_ausentes,
+      COALESCE(l.total_bandejas,     0) AS total_bandejas,
+      COALESCE(l.total_horas,        0) AS total_horas
     FROM listados_asistencias l
     JOIN usuarios u ON l.id_encargado = u.id
     WHERE l.id = ?
@@ -131,6 +138,32 @@ $pdf->SetFont('Arial', 'B', 11);
 $pdf->Cell(60, 8, utf8_decode($info['encargado'] . ' ' . $info['apellidos']), 0, 1);
 
 $pdf->Ln(4);
+
+// ===== Resumen del parte =====
+$pdf->SetFont('Arial','B',11);
+$pdf->SetTextColor(255, 103, 29);
+$pdf->Cell(0, 8, utf8_decode('Resumen del Parte:'), 0, 1);
+
+$pdf->SetFont('Arial','',10);
+$pdf->SetTextColor(0, 0, 0);
+
+$pdf->Cell(60, 6, utf8_decode('Total de trabajadores:'), 0, 0);
+$pdf->Cell(20, 6, (int)$info['total_trabajadores'], 0, 1);
+
+$pdf->Cell(60, 6, utf8_decode('Presentes:'), 0, 0);
+$pdf->Cell(20, 6, (int)$info['total_presentes'], 0, 1);
+
+$pdf->Cell(60, 6, utf8_decode('Ausentes:'), 0, 0);
+$pdf->Cell(20, 6, (int)$info['total_ausentes'], 0, 1);
+
+$pdf->Cell(60, 6, utf8_decode('Total Bandejas:'), 0, 0);
+$pdf->Cell(20, 6, number_format((float)$info['total_bandejas'], 2, ',', '.'), 0, 1);
+
+$pdf->Cell(60, 6, utf8_decode('Total Horas:'), 0, 0);
+$pdf->Cell(20, 6, number_format((float)$info['total_horas'], 2, ',', '.'), 0, 1);
+
+$pdf->Ln(2);
+
 
 // Cabecera de tabla
 $pdf->SetFillColor(255, 103, 29);

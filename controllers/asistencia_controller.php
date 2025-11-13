@@ -328,19 +328,64 @@ if ($action === 'guardar_parte_completo') {
         }
     }
 
-    /* ---------- 2.3 Actualizar resumen + firma en listados_asistencias ---------- */
-    $sqlUpd = "UPDATE listados_asistencias SET
-        encargado_nombre = '".mysqli_real_escape_string($conexion,$encargado_nombre)."',
-        total_trabajadores = $total_trabajadores,
-        total_presentes    = $total_presentes,
-        total_ausentes     = $total_ausentes,
-        total_bandejas     = $total_bandejas,
-        total_horas        = $total_horas";
-    if ($firma_path_sql !== "NULL") {
-        $sqlUpd .= ", firma_path = $firma_path_sql";
+/* ---------- 2.2 Guardar firma en carpeta y nombre en DB (storage/firmas) ---------- */
+$firma_nombre_sql = "NULL"; // guardaremos solo el nombre del archivo (sin ruta)
+if ($firma_base64 && strpos($firma_base64, 'data:image') === 0) {
+    $rutaDir = __DIR__ . '/../storage/firmas';
+    if (!is_dir($rutaDir)) { @mkdir($rutaDir, 0775, true); }
+
+    // detectar mime
+    $mime = 'png';
+    if (preg_match('#^data:image/(png|jpg|jpeg);base64,#i', $firma_base64, $m)) {
+        $mime = strtolower($m[1]) === 'jpeg' ? 'jpg' : strtolower($m[1]);
     }
-    $sqlUpd .= " WHERE id = $id_listado LIMIT 1";
-    mysqli_query($conexion, $sqlUpd) or error_log('❌ Error SQL resumen/firma: ' . mysqli_error($conexion));
+
+    // decodificar seguro
+    $raw = preg_replace('#^data:image/[^;]+;base64,#', '', $firma_base64);
+    $bin = base64_decode($raw, true);
+
+    if ($bin !== false) {
+        $nombre = 'firma_parte_' . $id_listado . '_' . date('Ymd_His') . '.' . $mime; // SOLO nombre
+        $ruta   = $rutaDir . '/' . $nombre;
+        if (file_put_contents($ruta, $bin) !== false) {
+            $firma_nombre_sql = "'" . mysqli_real_escape_string($conexion, $nombre) . "'";
+        } else {
+            error_log('❌ No se pudo escribir la firma en disco: ' . $ruta);
+        }
+    } else {
+        error_log('❌ Firma base64 inválida (decode falló)');
+    }
+}
+
+
+ /* ---------- 2.3 Actualizar resumen + firma en listados_asistencias (coincide con el PDF) ---------- */
+$sqlUpd = "UPDATE listados_asistencias SET
+    encargado_nombre   = '".mysqli_real_escape_string($conexion, $encargado_nombre)."',
+    total_trabajadores = $total_trabajadores,
+    total_presentes    = $total_presentes,
+    total_ausentes     = $total_ausentes,
+    total_bandejas     = $total_bandejas,
+    total_horas        = $total_horas";
+
+/*
+ * MUY IMPORTANTE:
+ * - Aquí debes usar la variable que guardaste cuando convertiste la firma base64 a archivo.
+ * - Si seguiste mi paso 1.2, esa variable se llama $firma_nombre_sql y contiene SOLO el nombre del archivo,
+ *   p.ej. 'firma_parte_60_20251113_174512.png'
+ * - NO uses 'firma_path' porque tu PDF NO lo consulta.
+ */
+if (isset($firma_nombre_sql) && $firma_nombre_sql !== "NULL") {
+    $now = date('Y-m-d H:i:s');
+    $ip  = mysqli_real_escape_string($conexion, $_SERVER['REMOTE_ADDR'] ?? '');
+    $sqlUpd .= ",
+        firma_encargado = $firma_nombre_sql,
+        fecha_firma     = '$now',
+        ip_firma        = '$ip'";
+}
+
+$sqlUpd .= " WHERE id = $id_listado LIMIT 1";
+mysqli_query($conexion, $sqlUpd) or error_log('❌ Error SQL resumen/firma: ' . mysqli_error($conexion));
+
 
     ob_clean();
     header('Content-Type: application/json; charset=utf-8');
