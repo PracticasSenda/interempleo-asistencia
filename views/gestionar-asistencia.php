@@ -7,6 +7,7 @@ $id_listado = $_GET['id_listado'] ?? null;
 ?>
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -43,21 +44,21 @@ $id_listado = $_GET['id_listado'] ?? null;
 
       if ($res && mysqli_num_rows($res) > 0) {
         echo "<div class='tabla-responsive'>
-                <table>
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Empresa</th>
-                      <th>Producto</th>
-                      <th>Fecha</th>
-                      <th>Encargado</th>
-                      <th>Opciones</th>
-                    </tr>
-                  </thead>
+                <table class='polygonNaranja'>
+  <thead>
+    <tr>
+      <th class='col-id'><span>ID</span></th>
+      <th><span>Empresa</span></th>
+      <th><span>Producto</span></th>
+      <th><span>Fecha</span></th>
+      <th><span>Encargado</span></th>
+      <th><span>Opciones</span></th>
+    </tr>
+  </thead>
                   <tbody>";
         while ($fila = mysqli_fetch_assoc($res)) {
           echo "<tr>
-                  <td>{$fila['id']}</td>
+                  <td class='col-id'>{$fila['id']}</td>
                   <td>{$fila['empresa']}</td>
                   <td>{$fila['producto']}</td>
                   <td>{$fila['fecha']}</td>
@@ -110,7 +111,7 @@ $id_listado = $_GET['id_listado'] ?? null;
 
       echo "<h2>Asistencias del listado</h2>";
 
-$sql_asistencias = "
+      $sql_asistencias = "
     SELECT 
         t.id AS id_trabajador,
         t.nombre,
@@ -130,18 +131,18 @@ $sql_asistencias = "
       $res_asistencias = mysqli_query($conexion, $sql_asistencias);
 
       echo "<div class='tabla-responsive'>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Nombre</th>
-                    <th>Apellidos</th>
-                    <th>DNI</th>
-                    <th>Asistencia</th>
-                    <th>Bandejas</th>
-                    <th>Horas</th>
-                    <th>Observaciones</th>
-                  </tr>
-                </thead>
+              <table class='polygonNaranja'>
+  <thead>
+    <tr>
+      <th><span>Nombre</span></th>
+      <th><span>Apellidos</span></th>
+      <th><span>DNI</span></th>
+      <th><span>Asistencia</span></th>
+      <th><span>Bandejas</span></th>
+      <th><span>Horas</span></th>
+      <th><span>Observaciones</span></th>
+    </tr>
+  </thead>
                 <tbody>";
 
       if ($res_asistencias && mysqli_num_rows($res_asistencias) > 0) {
@@ -161,9 +162,7 @@ $sql_asistencias = "
       }
 
       echo "</tbody></table></div>";
-    }
-
-    else {
+    } else {
       echo "<p class='mensaje-vacio'>Selecciona una fecha para ver los listados.</p>";
     }
     ?>
@@ -184,4 +183,5 @@ $sql_asistencias = "
     });
   </script>
 </body>
+
 </html>

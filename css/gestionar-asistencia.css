@@ -1,9 +1,11 @@
-:root {
+
+  :root {
   --color-principal: #FF671D;
   --color-fondo: #FFFFFF;
   --color-texto: #333333;
   --color-borde: #EAEAEA;
-  --color-gris: #888;
+  --color-gris: #888888;
+  --color-naranja-suave: #FFF3EA; /* filas impares */
 }
 
 body {
@@ -241,4 +243,109 @@ tr:hover {
     row-gap: 0.4rem;
   }
 }
+.tabla-responsive table th.col-id,
+.tabla-responsive table td.col-id {
+  display: none;
+}
+/* ============================
+   TABLA BASE + FILAS
+   ============================ */
+
+.tabla-responsive table.polygonNaranja {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  border-radius: 12px;
+  overflow: hidden;             /* bordes suavemente redondeados */
+  background: var(--color-fondo);
+}
+
+.tabla-responsive table.polygonNaranja th,
+.tabla-responsive table.polygonNaranja td {
+  padding: 0.75rem 0.95rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-borde);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.tabla-responsive table.polygonNaranja tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Filas impares en naranja suave */
+.tabla-responsive table.polygonNaranja tbody tr:nth-child(odd) {
+  background: var(--color-naranja-suave);
+}
+
+.tabla-responsive table.polygonNaranja tbody tr:nth-child(even) {
+  background: var(--color-fondo);
+}
+
+.tabla-responsive table.polygonNaranja tbody tr:hover {
+  background: #f9fafb;
+}
+
+/* ============================
+   CABECERA polygonNaranja
+   (diseño 1 que os gusta)
+   ============================ */
+
+.polygonNaranja thead th {
+  position: relative;
+  background: var(--color-principal);     /* barra base del th */
+  color: #FFFFFF;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  font-size: 0.75rem;
+  border-bottom: none;
+  padding-top: 0.9rem;
+  padding-bottom: 0.9rem;
+  overflow: hidden;
+}
+
+/* texto por encima del polygon */
+.polygonNaranja thead th > span {
+  position: relative;
+  z-index: 2;
+}
+
+/* capa con el polygon naranja degradado */
+.polygonNaranja thead th::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, #FF8A4C, #FF671D);
+  /* top inclinado suave hacia la derecha */
+  clip-path: polygon(
+    0 15%,
+    100% 0,
+    100% 100%,
+    0 100%
+  );
+  z-index: 1;
+}
+
+/* primera columna con inclinación opuesta */
+.polygonNaranja thead th:first-child::before {
+  clip-path: polygon(
+    0 0,
+    100% 15%,
+    100% 100%,
+    0 100%
+  );
+}
+
+
+
+/* opcional: que el texto no se pegue tanto a los lados en móviles */
+@media (max-width: 600px) {
+  .tabla-responsive table.polygonNaranja th,
+  .tabla-responsive table.polygonNaranja td {
+    padding: 0.6rem 0.6rem;
+    font-size: 0.8rem;
+  }
+}
+
 

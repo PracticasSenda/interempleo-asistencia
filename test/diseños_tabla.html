@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Tablas con cabeceras inclinadas (polygon)</title>
+  <style>
+    :root {
+      --color-principal: #FF671D;       /* naranja corporativo */
+      --color-fondo: #FFFFFF;
+      --color-texto: #333333;
+      --color-borde: #EAEAEA;
+      --color-gris: #888888;
+      --color-naranja-suave: #FFF3EA;   /* filas impares */
+
+      --color-azul-oscuro: #1F2937;
+      --color-azul-vivo: #2563EB;
+      --color-teal: #0D9488;
+      --color-purpura: #7C3AED;
+      --color-gris-oscuro: #111827;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 2rem;
+      background: #f3f4f6;
+      color: var(--color-texto);
+    }
+
+    h1 {
+      margin: 0 0 1rem;
+      font-size: 1.4rem;
+      color: var(--color-principal);
+    }
+
+    h2 {
+      margin: 0 0 0.5rem;
+      font-size: 1.1rem;
+      color: #111827;
+    }
+
+    p {
+      margin: 0 0 1.3rem;
+      font-size: 0.86rem;
+      color: var(--color-gris);
+    }
+
+    .tabla-demo {
+      margin-bottom: 2.5rem;
+      background: var(--color-fondo);
+      padding: 1.5rem;
+      border-radius: 18px;
+      box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+      border: 1px solid #e2e8f0;
+    }
+
+    .tabla-demo table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      border-radius: 12px;
+      overflow: hidden; /* bordes suaves de la tabla */
+    }
+
+    .tabla-demo th,
+    .tabla-demo td {
+      padding: 0.75rem 0.95rem;
+      text-align: left;
+      border-bottom: 1px solid var(--color-borde);
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+
+    .tabla-demo tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Filas impares en naranja suave */
+    .tabla-demo tbody tr:nth-child(odd) {
+      background: var(--color-naranja-suave);
+    }
+
+    .tabla-demo tbody tr:nth-child(even) {
+      background: var(--color-fondo);
+    }
+
+    .tabla-demo tbody tr:hover {
+      background: #f9fafb;
+    }
+
+    /* BASE para todas las cabeceras inclinadas */
+    thead th {
+      position: relative;
+      color: #FFFFFF;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 600;
+      font-size: 0.75rem;
+      border-bottom: none;
+      padding-top: 0.9rem;
+      padding-bottom: 0.9rem;
+      overflow: hidden;
+    }
+
+    thead th > span {
+      position: relative;
+      z-index: 2;
+    }
+
+    thead th::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+
+    /* Pills de estado (por si quieres copiar la idea) */
+    .estado-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.16rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
+    .estado-ok {
+      background: #e3f6ea;
+      color: #1c7a34;
+    }
+
+    .estado-no {
+      background: #fde2e2;
+      color: #a22020;
+    }
+
+    .text-muted {
+      color: var(--color-gris);
+      font-size: 0.8rem;
+    }
+
+    /* =======================================================
+       DISEÑO 1 – Barra naranja con top inclinado suave
+       ======================================================= */
+
+    .tabla-top-a thead th {
+      background: var(--color-principal); /* barra base */
+    }
+
+    .tabla-top-a thead th::before {
+      background: linear-gradient(120deg, #FF8A4C, #FF671D);
+      /* top ligeramente inclinado hacia la derecha */
+      clip-path: polygon(
+        0 15%,
+        100% 0,
+        100% 100%,
+        0 100%
+      );
+    }
+
+    .tabla-top-a thead th:first-child::before {
+      /* primera columna con inclinación opuesta */
+      clip-path: polygon(
+        0 0,
+        100% 15%,
+        100% 100%,
+        0 100%
+      );
+    }
+
+    /* =======================================================
+       DISEÑO 2 – Top en zig-zag (dientes suaves)
+       ======================================================= */
+
+    .tabla-top-b thead th {
+      background: var(--color-azul-oscuro);
+    }
+
+    .tabla-top-b thead th::before {
+      background: linear-gradient(120deg, #FF934F, #FF671D);
+      clip-path: polygon(
+        0 20%,
+        20% 0,
+        40% 20%,
+        60% 0,
+        80% 20%,
+        100% 0,
+        100% 100%,
+        0 100%
+      );
+    }
+
+    /* =======================================================
+       DISEÑO 3 – Banda quebrada con ligera muesca central
+       ======================================================= */
+
+    .tabla-top-c thead th {
+      background: var(--color-azul-vivo);
+    }
+
+    .tabla-top-c thead th::before {
+      background: linear-gradient(135deg, #FF9A5C, #FF671D);
+      clip-path: polygon(
+        0 18%,
+        35% 0,
+        50% 12%,
+        65% 0,
+        100% 18%,
+        100% 100%,
+        0 100%
+      );
+    }
+
+    /* =======================================================
+       DISEÑO 4 – Esquina recortada (cut corner)
+       ======================================================= */
+
+    .tabla-top-d thead th {
+      background: var(--color-gris-oscuro);
+    }
+
+    .tabla-top-d thead th::before {
+      background: linear-gradient(135deg, #FF8F4A, #FF671D);
+      /* esquina superior derecha recortada */
+      clip-path: polygon(
+        0 0,
+        80% 0,
+        100% 20%,
+        100% 100%,
+        0 100%
+      );
+    }
+
+    .tabla-top-d thead th:first-child::before {
+      /* primera con recorte en la izquierda para variar */
+      clip-path: polygon(
+        0 20%,
+        20% 0,
+        100% 0,
+        100% 100%,
+        0 100%
+      );
+    }
+
+    /* =======================================================
+       DISEÑO 5 – Banda inclinada con notch lateral
+       ======================================================= */
+
+    .tabla-top-e thead th {
+      background: var(--color-teal);
+    }
+
+    .tabla-top-e thead th::before {
+      background: linear-gradient(135deg, #FF9C61, #FF671D);
+      /* inclinada con pequeña muesca a la izquierda */
+      clip-path: polygon(
+        10% 0,
+        100% 0,
+        100% 100%,
+        0 100%,
+        0 25%
+      );
+    }
+
+    .tabla-top-e thead th:last-child::before {
+      /* última con muesca a la derecha */
+      clip-path: polygon(
+        0 0,
+        90% 0,
+        100% 25%,
+        100% 100%,
+        0 100%
+      );
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Tablas con cabeceras inclinadas (sin hexágonos)</h1>
+  <p>5 diseños basados en formas inclinadas superiores tipo “banda”, usando <code>clip-path: polygon()</code>.</p>
+
+  <!-- =========== DISEÑO 1 =========== -->
+  <section class="tabla-demo">
+    <h2>Diseño 1 – Barra naranja top inclinado suave</h2>
+    <p>Similar a tu diseño 4 original, pero más limpio: barras naranjas con inclinación suave.</p>
+
+    <table class="tabla-top-a">
+      <thead>
+        <tr>
+          <th><span>Listado</span></th>
+          <th><span>Fecha</span></th>
+          <th><span>Centro</span></th>
+          <th><span>Estado</span></th>
+          <th><span>Observaciones</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>L-2025-45</td>
+          <td>2025-11-13</td>
+          <td>Finca Los Olivos</td>
+          <td><span class="estado-pill estado-ok">Firmado</span></td>
+          <td class="text-muted">Correcto</td>
+        </tr>
+        <tr>
+          <td>L-2025-44</td>
+          <td>2025-11-12</td>
+          <td>Finca La Vega</td>
+          <td><span class="estado-pill estado-no">Pendiente</span></td>
+          <td class="text-muted">Falta firma encargado</td>
+        </tr>
+        <tr>
+          <td>L-2025-43</td>
+          <td>2025-11-11</td>
+          <td>Finca El Prado</td>
+          <td><span class="estado-pill estado-ok">Firmado</span></td>
+          <td class="text-muted">Enviado a RRHH</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- =========== DISEÑO 2 =========== -->
+  <section class="tabla-demo">
+    <h2>Diseño 2 – Top en zig-zag</h2>
+    <p>Barra azul oscura con una banda naranja en zig-zag arriba, moderna pero sobria.</p>
+
+    <table class="tabla-top-b">
+      <thead>
+        <tr>
+          <th><span>Fecha</span></th>
+          <th><span>Empresa</span></th>
+          <th><span>Producto</span></th>
+          <th><span>Encargado</span></th>
+          <th><span>Trabajadores</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>2025-11-13</td>
+          <td>Interempleo</td>
+          <td>Naranja de mesa</td>
+          <td>María López</td>
+          <td>18</td>
+        </tr>
+        <tr>
+          <td>2025-11-12</td>
+          <td>AgroCampo</td>
+          <td>Limón</td>
+          <td>Carlos Pérez</td>
+          <td>12</td>
+        </tr>
+        <tr>
+          <td>2025-11-11</td>
+          <td>CampoSur</td>
+          <td>Mandarina</td>
+          <td>Lucía Martínez</td>
+          <td>15</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- =========== DISEÑO 3 =========== -->
+  <section class="tabla-demo">
+    <h2>Diseño 3 – Banda quebrada con muesca central</h2>
+    <p>El top tiene un “quiebro” en el centro, como si subiera y bajara ligeramente.</p>
+
+    <table class="tabla-top-c">
+      <thead>
+        <tr>
+          <th><span>Fecha</span></th>
+          <th><span>Centro</span></th>
+          <th><span>Producto</span></th>
+          <th><span>Turno</span></th>
+          <th><span>Listados</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>2025-11-13</td>
+          <td>Finca Los Olivos</td>
+          <td>Uva de mesa</td>
+          <td>Mañana</td>
+          <td>3</td>
+        </tr>
+        <tr>
+          <td>2025-11-13</td>
+          <td>Finca La Vega</td>
+          <td>Pimiento</td>
+          <td>Tarde</td>
+          <td>2</td>
+        </tr>
+        <tr>
+          <td>2025-11-12</td>
+          <td>Finca El Prado</td>
+          <td>Melón</td>
+          <td>Mañana</td>
+          <td>1</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- =========== DISEÑO 4 =========== -->
+  <section class="tabla-demo">
+    <h2>Diseño 4 – Esquina recortada</h2>
+    <p>Esquina superior recortada, con fondo gris muy oscuro y banda naranja.</p>
+
+    <table class="tabla-top-d">
+      <thead>
+        <tr>
+          <th><span>Trabajador</span></th>
+          <th><span>DNI</span></th>
+          <th><span>Asistencia</span></th>
+          <th><span>Bandejas</span></th>
+          <th><span>Horas</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Juan García</td>
+          <td>12345678A</td>
+          <td><span class="estado-pill estado-ok">Asiste</span></td>
+          <td>25</td>
+          <td>8</td>
+        </tr>
+        <tr>
+          <td>Laura Sánchez</td>
+          <td>23456789B</td>
+          <td><span class="estado-pill estado-no">No asiste</span></td>
+          <td>0</td>
+          <td>0</td>
+        </tr>
+        <tr>
+          <td>Pedro Ruiz</td>
+          <td>34567890C</td>
+          <td><span class="estado-pill estado-ok">Asiste</span></td>
+          <td>30</td>
+          <td>9</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- =========== DISEÑO 5 =========== -->
+  <section class="tabla-demo">
+    <h2>Diseño 5 – Banda inclinada con notch lateral</h2>
+    <p>Combinación teal + naranja, con pequeña muesca en el lateral superior.</p>
+
+    <table class="tabla-top-e">
+      <thead>
+        <tr>
+          <th><span>ID Parte</span></th>
+          <th><span>Fecha</span></th>
+          <th><span>Empresa</span></th>
+          <th><span>Encargado</span></th>
+          <th><span>Total Trab.</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>#1023</td>
+          <td>2025-11-13</td>
+          <td>Interempleo</td>
+          <td>María López</td>
+          <td>18</td>
+        </tr>
+        <tr>
+          <td>#1022</td>
+          <td>2025-11-12</td>
+          <td>AgroCampo</td>
+          <td>Carlos Pérez</td>
+          <td>12</td>
+        </tr>
+        <tr>
+          <td>#1021</td>
+          <td>2025-11-11</td>
+          <td>CampoSur</td>
+          <td>Lucía Martínez</td>
+          <td>15</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+</body>
+</html>
