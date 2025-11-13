@@ -24,7 +24,7 @@ session_start();
 if (isset($_SESSION['LAST_ACTIVITY']) && (time() - $_SESSION['LAST_ACTIVITY'] > 1200)) {
     session_unset();
     session_destroy();
-    header("Location: login.php?expired=1");
+    header("Location: /interempleo-asistencia/auth/login.php?expired=1");
     exit();
 }
 $_SESSION['LAST_ACTIVITY'] = time();
@@ -43,7 +43,7 @@ if (!isset($_SESSION['CREATED'])) {
 // 🔐 Validación de sesión activa
 // ===============================================
 if (!isset($_SESSION['nombre'])) {
-    header("Location: login.php");
+    header("Location: /interempleo-asistencia/auth/login.php");
     exit();
 }
 
@@ -57,7 +57,7 @@ if (
 ) {
     session_unset();
     session_destroy();
-    header("Location: login.php");
+    header("Location: /interempleo-asistencia/auth/login.php");
     exit();
 }
 ?>
