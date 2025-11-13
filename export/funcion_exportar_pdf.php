@@ -2,7 +2,9 @@
 // export/funcion_exportar_pdf.php
 // Muestra el PDF en la pestaña nueva (inline). Requiere FPDF.
 
-if (session_status() !== PHP_SESSION_ACTIVE) { session_start(); }
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
 
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/../fpdf/fpdf.php';
@@ -55,21 +57,32 @@ if (!$res_info || $res_info->num_rows === 0) {
 $info = $res_info->fetch_assoc();
 $stmt_info->close();
 
-// Asistencias
+// Asistencias (coalesce para evitar nulls y asegurar decimales)
 $stmt_asist = $conexion->prepare("
-    SELECT t.nombre, t.apellidos, t.dni, a.asistencia, a.Bandeja, a.Horas, a.Observaciones
+    SELECT 
+        t.nombre,
+        t.apellidos,
+        t.dni,
+        a.asistencia,
+        COALESCE(a.Bandeja, 0)         AS bandejas,
+        COALESCE(a.Horas,   0)         AS horas,
+        COALESCE(a.Observaciones, '')  AS observaciones
     FROM asistencias a
-    JOIN trabajadores t ON a.id_trabajador = t.id
+    JOIN trabajadores t ON t.id = a.id_trabajador
     WHERE a.id_listado = ?
     ORDER BY t.apellidos ASC, t.nombre ASC
 ");
-$stmt_asist->bind_param("i", $id_listado);
+$stmt_asist->bind_param('i', $id_listado);
 $stmt_asist->execute();
 $asist_res = $stmt_asist->get_result();
 
+
+
 // ---- 3) Clase PDF personalizada ----
-class PDF_Interempleo extends FPDF {
-    function Header() {
+class PDF_Interempleo extends FPDF
+{
+    function Header()
+    {
         $logoPath = __DIR__ . '/../img/logo_interempleo.jpg';
         if (is_file($logoPath)) {
             $this->Image($logoPath, 10, 8, 25);
@@ -83,7 +96,8 @@ class PDF_Interempleo extends FPDF {
         $this->Cell(0, 6, utf8_decode('Interempleo · Gestión de Asistencia'), 0, 1, 'C');
         $this->Ln(10);
     }
-    function Footer() {
+    function Footer()
+    {
         $this->SetY(-15);
         $this->SetFont('Arial', 'I', 8);
         $this->SetTextColor(130, 130, 130);
@@ -140,10 +154,13 @@ if ($asist_res && $asist_res->num_rows > 0) {
         $pdf->Cell($widths[1], 7, utf8_decode($fila['apellidos']), 1);
         $pdf->Cell($widths[2], 7, $fila['dni'], 1);
         $pdf->Cell($widths[3], 7, ($fila['asistencia'] === 'si' ? 'Presente' : 'Ausente'), 1);
-        $pdf->Cell($widths[4], 7, (string)$fila['Bandeja'], 1, 0, 'C');
-        $pdf->Cell($widths[5], 7, (string)$fila['Horas'], 1, 0, 'C');
-        // Evitar nulls
-        $obs = isset($fila['Observaciones']) ? (string)$fila['Observaciones'] : '';
+        $ban = (int)$fila['bandejas'];
+        $hor = is_numeric($fila['horas']) ? rtrim(rtrim(number_format((float)$fila['horas'], 2, '.', ''), '0'), '.') : '0';
+        $obs = (string)$fila['observaciones'];
+
+        $pdf->Cell($widths[4], 7, (string)$ban, 1, 0, 'C');
+        $pdf->Cell($widths[5], 7, (string)$hor, 1, 0, 'C');
+
         $pdf->Cell($widths[6], 7, utf8_decode($obs), 1);
         $pdf->Ln();
     }

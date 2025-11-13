@@ -41,21 +41,24 @@ document.addEventListener("DOMContentLoaded", () => {
       sugerencias.innerHTML = tempDiv.innerHTML.trim() !== "" ? tempDiv.innerHTML : "<div class='sugerencia-item sin-resultados'>No hay más trabajadores disponibles</div>";
       sugerencias.style.display = "block";
 
-      // Activar clic para agregar trabajadores
-      document.querySelectorAll(".sugerencia-item").forEach(item => {
-        if (!item.classList.contains("sin-resultados")) {
-          item.addEventListener("click", () => {
-            const dni = item.dataset.dni;
-            const nombre = item.dataset.nombre;
-            const id = item.dataset.id;   // ⬅️ viene del backend
-            agregarTrabajador(nombre, dni, id);
+// ---- Activar clic para agregar trabajadores (delegación) ----
+sugerencias.onclick = (ev) => {
+  const item = ev.target.closest(".sugerencia-item");
+  if (!item || item.classList.contains("sin-resultados")) return;
 
-            buscador.value = "";
-            sugerencias.innerHTML = "";
-            sugerencias.style.display = "none";
-          });
-        }
-      });
+  const dni  = item.dataset.dni || "";
+  const nombre = item.dataset.nombre || "";
+  const id   = item.dataset.id || "";   // viene del backend
+
+  if (!dni || !nombre) return;
+
+  agregarTrabajador(nombre, dni, id);
+
+  buscador.value = "";
+  sugerencias.innerHTML = "";
+  sugerencias.style.display = "none";
+};
+
     });
 
     // Ocultar sugerencias si haces clic fuera
@@ -634,107 +637,101 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Confirmar y guardar
-  const btnConfirmarResumen = document.getElementById("btn-confirmar-resumen");
-  if (btnConfirmarResumen) {
-    btnConfirmarResumen.addEventListener("click", async () => {
-      const encargado = document.getElementById("nombre_encargado")?.value.trim();
-      const empresa = document.getElementById("empresa")?.value.trim();
-      const fecha = document.getElementById("fecha")?.value.trim();
-      const producto = document.getElementById("producto")?.value.trim();
+ // Confirmar y guardar
+const btnConfirmarResumen = document.getElementById("btn-confirmar-resumen");
+if (btnConfirmarResumen) {
+  btnConfirmarResumen.addEventListener("click", async () => {
+    const encargado = document.getElementById("nombre_encargado")?.value.trim();
+    const empresa   = (document.getElementById("empresa")  || document.querySelector('[name="empresa"]'))?.value?.trim()  || "";
+    const fecha     = (document.getElementById("fecha")    || document.querySelector('[name="fecha"]'))?.value?.trim()    || "";
+    const producto  = (document.getElementById("producto") || document.querySelector('[name="producto"]'))?.value?.trim() || "";
 
-      const trabajadores = [];
-      document.querySelectorAll("tr[id^='fila_']").forEach(fila => {
-        const dni = fila.id.replace("fila_", "");
-        const checkAsistencia = fila.querySelector(".check-asistencia");
-        const asistencia = checkAsistencia?.checked ? "si" : "no";
-        const detalle = fila.nextElementSibling;
-        const inputB = detalle?.querySelector(`input[name='Bandeja_${dni}']`);
-        const inputH = detalle?.querySelector(`input[name='Horas_${dni}']`);
-        const inputO = detalle?.querySelector(`input[name='Observaciones_${dni}']`);
+    // FIRMA: validar que exista
+    const firma = document.getElementById("firmaBase64")?.value || "";
+    if (!firma) {
+      mostrarBanner("⚠️ Debe firmar el parte antes de guardarlo.", "error");
+      return;
+    }
 
-        // También leer los inputs ocultos que crea "Aplicar a todos"
-        const hiddenB = fila.querySelector('input.input-bandejas')?.value;
-        const hiddenH = fila.querySelector('input.input-horas')?.value;
+    const trabajadores = [];
+    document.querySelectorAll("tr[id^='fila_']").forEach(fila => {
+      const dni = fila.id.replace("fila_", "");
+      const checkAsistencia = fila.querySelector(".check-asistencia");
+      const asistencia = checkAsistencia?.checked ? "si" : "no";
 
-        /**
-         * PRIORIDAD CORREGIDA:
-         * 1) Si hay input de detalle y NO está vacío, usarlo
-         * 2) Si no, usar dataset.*Final (lo que puso "Aplicar a todos")
-         * 3) Si no, usar ocultos
-         * 4) Si no, "0"
-         */
-        const rawB = (inputB && inputB.value !== "") ? inputB.value
-          : (fila.dataset.bandejaFinal ?? hiddenB ?? "0");
-        const rawH = (inputH && inputH.value !== "") ? inputH.value
-          : (fila.dataset.horasFinal ?? hiddenH ?? "0");
+      const detalle = fila.nextElementSibling;
+      const inputB = detalle?.querySelector(`input[name='Bandeja_${dni}']`);
+      const inputH = detalle?.querySelector(`input[name='Horas_${dni}']`);
+      const inputO = detalle?.querySelector(`input[name='Observaciones_${dni}']`);
 
-        // Normaliza a número seguro
-        const numB = isNaN(Number(rawB)) ? 0 : Number(rawB);
-        const numH = isNaN(Number(rawH)) ? 0 : Number(rawH);
+      const hiddenB = fila.querySelector('input.input-bandejas')?.value;
+      const hiddenH = fila.querySelector('input.input-horas')?.value;
 
+      const rawB = (inputB && inputB.value !== "") ? inputB.value : (fila.dataset.bandejaFinal ?? hiddenB ?? "0");
+      const rawH = (inputH && inputH.value !== "") ? inputH.value : (fila.dataset.horasFinal   ?? hiddenH ?? "0");
 
-        trabajadores.push({
-          dni,
-          asistencia,
-          bandeja: asistencia === "si" ? numB : 0,
-          horas: asistencia === "si" ? numH : 0,
-          observaciones: inputO?.value || ""
-        });
+      const numB = isNaN(Number(rawB)) ? 0 : Number(rawB);
+      const numH = isNaN(Number(rawH)) ? 0 : Number(rawH);
 
+      trabajadores.push({
+        dni,
+        asistencia,
+        bandeja: asistencia === "si" ? numB : 0,
+        horas:   asistencia === "si" ? numH : 0,
+        observaciones: inputO?.value || ""
+      });
+    });
+
+    const formData = new FormData();
+    formData.append("action", "guardar_parte_completo");
+    formData.append("encargado", encargado || "");
+    formData.append("empresa",   empresa   || "");
+    formData.append("fecha",     fecha     || "");
+    formData.append("producto",  producto  || "");
+    formData.append("trabajadores", JSON.stringify(trabajadores));
+    formData.append("firma_base64", firma);
+
+    try {
+      const res = await fetch("../controllers/asistencia_controller.php", {
+        method: "POST",
+        body: formData
       });
 
+      if (res.ok) {
+        mostrarBanner("✅ Parte de asistencia guardado correctamente.", "ok");
+        const modal = document.getElementById("modal-resumen-parte");
+        if (modal) modal.style.display = "none";
 
-      const formData = new FormData();
-      formData.append("action", "guardar_parte_completo");
-      formData.append("encargado", encargado || "");
-      formData.append("empresa", empresa || "");
-      formData.append("fecha", fecha || "");
-      formData.append("producto", producto || "");
-      formData.append("trabajadores", JSON.stringify(trabajadores));
+        // Limpieza visual opcional (sin optional chaining en la izquierda)
+        const inpEnc = document.getElementById("nombre_encargado");
+        if (inpEnc) inpEnc.value = "";
+        const inpEmp = document.getElementById("empresa");
+        if (inpEmp) inpEmp.value = "";
+        const inpProd = document.getElementById("producto");
+        if (inpProd) inpProd.value = "";
 
-      try {
-        const res = await fetch("../controllers/asistencia_controller.php", {
-          method: "POST",
-          body: formData
+        const tbody = document.querySelector("#tabla_asistencia tbody");
+        if (tbody) {
+          tbody.innerHTML = '<tr class="placeholder-row"><td colspan="4" style="text-align:center;color:#888;">No hay trabajadores agregados.</td></tr>';
+        }
+        document.querySelectorAll("tr[id^='fila_']").forEach(fila => {
+          delete fila.dataset.bandejasPendientes;
+          delete fila.dataset.horasPendientes;
+          delete fila.dataset.bandejaFinal;
+          delete fila.dataset.horasFinal;
         });
 
-        if (res.ok) {
-          mostrarBanner("✅ Parte de asistencia guardado correctamente.", "ok");
-          const modal = document.getElementById("modal-resumen-parte");
-          if (modal) modal.style.display = "none";
-
-          // Reiniciar visualmente
-          const nombreEnc = document.getElementById("nombre_encargado");
-          if (nombreEnc) nombreEnc.value = "";
-          const empresaEl = document.getElementById("empresa");
-          if (empresaEl) empresaEl.value = "";
-          const productoEl = document.getElementById("producto");
-          if (productoEl) productoEl.value = "";
-
-          const tbody = document.querySelector("#tabla_asistencia tbody");
-          if (tbody) {
-            tbody.innerHTML =
-              '<tr class="placeholder-row"><td colspan="4" style="text-align:center;color:#888;">No hay trabajadores agregados.</td></tr>';
-          }
-
-          // 🔹 Limpiar datasets internos
-          document.querySelectorAll("tr[id^='fila_']").forEach(fila => {
-            delete fila.dataset.bandejasPendientes;
-            delete fila.dataset.horasPendientes;
-            delete fila.dataset.bandejaFinal;
-            delete fila.dataset.horasFinal;
-          });
-
-        } else {
-          mostrarBanner("⚠️ Error al guardar el parte.", "error");
-        }
-      } catch (error) {
-        console.error(error);
-        mostrarBanner("⚠️ Error inesperado al guardar el parte.", "error");
+      } else {
+        mostrarBanner("⚠️ Error al guardar el parte.", "error");
       }
-    });
-  }
+    } catch (error) {
+      console.error(error);
+      mostrarBanner("⚠️ Error inesperado al guardar el parte.", "error");
+    }
+  }); // ← cierra addEventListener
+}   // ← cierra if (btnConfirmarResumen)
+
+
 
   const btnCancelarResumen = document.getElementById("btn-cancelar-resumen");
   if (btnCancelarResumen) {

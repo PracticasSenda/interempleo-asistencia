@@ -204,14 +204,15 @@ $horas = (float) max(0, (float)($_POST['Horas'] ?? 0));
 }
 
 /* ===========================================================
-   GUARDAR PARTE COMPLETO (usando listados_asistencias)
+   GUARDAR PARTE COMPLETO (con firma + resumen)
 ============================================================ */
 if ($action === 'guardar_parte_completo') {
     $encargado_nombre = mysqli_real_escape_string($conexion, $_POST['encargado'] ?? '');
-    $empresa = mysqli_real_escape_string($conexion, $_POST['empresa'] ?? '');
-    $fecha = mysqli_real_escape_string($conexion, $_POST['fecha'] ?? '');
+    $empresa  = mysqli_real_escape_string($conexion, $_POST['empresa']  ?? '');
+    $fecha    = mysqli_real_escape_string($conexion, $_POST['fecha']    ?? '');
     $producto = mysqli_real_escape_string($conexion, $_POST['producto'] ?? '');
     $trabajadores = json_decode($_POST['trabajadores'] ?? '[]', true);
+    $firma_base64 = $_POST['firma_base64'] ?? '';
 
     if (!$encargado_nombre || !$empresa || !$fecha || !$producto || empty($trabajadores)) {
         ob_clean();
@@ -219,26 +220,28 @@ if ($action === 'guardar_parte_completo') {
         exit('Datos incompletos.');
     }
 
-    // ID del encargado
-    $resEncargado = mysqli_query($conexion, "SELECT id FROM usuarios WHERE CONCAT(nombre, ' ', apellidos) LIKE '%$encargado_nombre%' AND rol='encargado' LIMIT 1");
+    // ID del encargado (tu consulta original)
+    $resEncargado = mysqli_query($conexion, "SELECT id FROM usuarios 
+        WHERE CONCAT(nombre, ' ', apellidos) LIKE '%$encargado_nombre%' 
+          AND rol='encargado' LIMIT 1");
     if (!$resEncargado || mysqli_num_rows($resEncargado) === 0) {
         ob_clean();
         http_response_code(404);
         exit('No se encontró el encargado especificado.');
     }
-    $id_encargado = mysqli_fetch_assoc($resEncargado)['id'];
+    $id_encargado = (int) mysqli_fetch_assoc($resEncargado)['id'];
 
-    // Crear/recuperar el listado
+    // Crear/recuperar el listado (tu lógica original)
     $checkParte = mysqli_query($conexion, "
         SELECT id FROM listados_asistencias 
         WHERE id_encargado='$id_encargado' AND fecha='$fecha' AND empresa='$empresa' AND producto='$producto'
         LIMIT 1
     ");
     if ($checkParte && mysqli_num_rows($checkParte) > 0) {
-        $id_listado = mysqli_fetch_assoc($checkParte)['id'];
+        $id_listado = (int) mysqli_fetch_assoc($checkParte)['id'];
     } else {
-        $sqlListado = "INSERT INTO listados_asistencias (id_encargado, empresa, fecha, producto)
-                       VALUES ('$id_encargado', '$empresa', '$fecha', '$producto')";
+        $sqlListado = "INSERT INTO listados_asistencias (id_encargado, empresa, fecha, producto, encargado_nombre)
+                       VALUES ('$id_encargado', '$empresa', '$fecha', '$producto', '".mysqli_real_escape_string($conexion,$encargado_nombre)."')";
         if (!mysqli_query($conexion, $sqlListado)) {
             ob_clean();
             http_response_code(500);
@@ -247,17 +250,22 @@ if ($action === 'guardar_parte_completo') {
         $id_listado = mysqli_insert_id($conexion);
     }
 
-    // 🔹 Insertar/actualizar cada trabajador en la tabla asistencias (MODIFICADO)
+    /* ---------- 2.1 Guardar/actualizar asistencias (tu bucle con minimos ajustes) ---------- */
+    $total_trabajadores = 0;
+    $total_presentes    = 0;
+    $total_ausentes     = 0;
+    $total_bandejas     = 0;
+    $total_horas        = 0.0;
+
     foreach ($trabajadores as $t) {
         $dni  = mysqli_real_escape_string($conexion, $t['dni']);
         $asis = ($t['asistencia'] ?? 'no') === 'si' ? 'si' : 'no';
 
-        // Prioridad numérica: 0 si vacío o ausente
         $bRaw = $t['bandeja'] ?? 0;
         $hRaw = $t['horas']   ?? 0;
-       $bandeja = $asis === 'si' ? (int)   max(0, (int)$bRaw)   : 0;
-$horas   = $asis === 'si' ? (float) max(0, (float)$hRaw) : 0.0;
 
+        $bandeja = $asis === 'si' ? (int)   max(0, (int)$bRaw)   : 0;
+        $horas   = $asis === 'si' ? (float) max(0, (float)$hRaw) : 0.0;
 
         $observaciones = mysqli_real_escape_string($conexion, substr(trim($t['observaciones'] ?? ''), 0, 255));
 
@@ -268,48 +276,89 @@ $horas   = $asis === 'si' ? (float) max(0, (float)$hRaw) : 0.0;
         }
         $id_trabajador = (int) mysqli_fetch_assoc($resTrab)['id'];
 
-        // ¿Existe ya asistencia para este listado y trabajador?
-        $check = mysqli_query(
-            $conexion,
-            "SELECT id FROM asistencias 
-             WHERE id_listado='$id_listado' AND id_trabajador='$id_trabajador'
-             LIMIT 1"
-        );
+        $check = mysqli_query($conexion, "SELECT id FROM asistencias 
+             WHERE id_listado='$id_listado' AND id_trabajador='$id_trabajador' LIMIT 1");
 
         if ($check && mysqli_num_rows($check) > 0) {
             $id_asistencia = (int) mysqli_fetch_assoc($check)['id'];
-            $sqlAsistencia = "
-                UPDATE asistencias SET
-                    empresa='$empresa',
-                    fecha='$fecha',
-                    producto='$producto',
-                    asistencia='$asis',
-                    Bandeja='$bandeja',
-                    Horas='$horas',
-                    Observaciones='$observaciones'
-                WHERE id='$id_asistencia'
-            ";
+            $sqlAsistencia = "UPDATE asistencias SET
+                    empresa='$empresa', fecha='$fecha', producto='$producto',
+                    asistencia='$asis', Bandeja='$bandeja', Horas='$horas', Observaciones='$observaciones'
+                WHERE id='$id_asistencia'";
         } else {
-            $sqlAsistencia = "
-                INSERT INTO asistencias 
-                    (id_listado, empresa, fecha, producto, asistencia, id_trabajador, dni, Bandeja, Horas, Observaciones)
-                VALUES 
-                    ('$id_listado', '$empresa', '$fecha', '$producto', '$asis', '$id_trabajador', '$dni', '$bandeja', '$horas', '$observaciones')
-            ";
+            $sqlAsistencia = "INSERT INTO asistencias
+                (id_listado, empresa, fecha, producto, asistencia, id_trabajador, dni, Bandeja, Horas, Observaciones)
+             VALUES
+                ('$id_listado', '$empresa', '$fecha', '$producto', '$asis', '$id_trabajador', '$dni', '$bandeja', '$horas', '$observaciones')";
         }
-
         mysqli_query($conexion, $sqlAsistencia) or error_log('❌ Error SQL asistencia: ' . mysqli_error($conexion));
+
+        // totales
+        $total_trabajadores++;
+        if ($asis === 'si') {
+            $total_presentes++;
+            $total_bandejas += (int)$bandeja;
+            $total_horas    += (float)$horas;
+        } else {
+            $total_ausentes++;
+        }
     }
+
+    /* ---------- 2.2 Guardar firma en carpeta y ruta en DB ---------- */
+    $firma_path_sql = "NULL";
+    if ($firma_base64 && strpos($firma_base64, 'data:image') === 0) {
+        $rutaDir = realpath(__DIR__ . '/../uploads/firmas');
+        if ($rutaDir === false) {
+            $rutaDir = __DIR__ . '/../uploads/firmas';
+            @mkdir($rutaDir, 0775, true);
+        }
+        $mime = 'png';
+        if (preg_match('#^data:image/(png|jpg|jpeg);base64,#i', $firma_base64, $m)) {
+            $mime = strtolower($m[1]) === 'jpeg' ? 'jpg' : strtolower($m[1]);
+        }
+        $raw = preg_replace('#^data:image/[^;]+;base64,#', '', $firma_base64);
+        $bin = base64_decode($raw);
+
+        $nombre = 'firma_parte_' . $id_listado . '_' . date('Ymd_His') . '.' . $mime;
+        $ruta   = $rutaDir . '/' . $nombre;
+        if (file_put_contents($ruta, $bin) !== false) {
+            // ruta relativa para FPDF
+            $rel = '../uploads/firmas/' . $nombre;
+            $firma_path_sql = "'" . mysqli_real_escape_string($conexion, $rel) . "'";
+        }
+    }
+
+    /* ---------- 2.3 Actualizar resumen + firma en listados_asistencias ---------- */
+    $sqlUpd = "UPDATE listados_asistencias SET
+        encargado_nombre = '".mysqli_real_escape_string($conexion,$encargado_nombre)."',
+        total_trabajadores = $total_trabajadores,
+        total_presentes    = $total_presentes,
+        total_ausentes     = $total_ausentes,
+        total_bandejas     = $total_bandejas,
+        total_horas        = $total_horas";
+    if ($firma_path_sql !== "NULL") {
+        $sqlUpd .= ", firma_path = $firma_path_sql";
+    }
+    $sqlUpd .= " WHERE id = $id_listado LIMIT 1";
+    mysqli_query($conexion, $sqlUpd) or error_log('❌ Error SQL resumen/firma: ' . mysqli_error($conexion));
 
     ob_clean();
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode([
         'status' => 'ok',
         'mensaje' => 'Parte guardado correctamente.',
-        'trabajadores_guardados' => count($trabajadores)
+        'id_listado' => $id_listado,
+        'totales' => [
+            'trabajadores' => $total_trabajadores,
+            'presentes'    => $total_presentes,
+            'ausentes'     => $total_ausentes,
+            'bandejas'     => $total_bandejas,
+            'horas'        => $total_horas,
+        ]
     ]);
     exit;
 }
+
 
 /* ============================================================
    ACCIÓN DESCONOCIDA

@@ -8,7 +8,7 @@ if (isset($_GET['token'])) {
     $token = $_GET['token'];
 
     // Consulta preparada para buscar tokens válidos
-    $stmt = $conexion->prepare("SELECT dni, token_hash, expira FROM tokens WHERE expira > NOW()");
+    $stmt = $conexion->prepare("SELECT dni, token, expira FROM tokens WHERE expira > NOW()");
     $stmt->execute();
     $resultado = $stmt->get_result();
 
@@ -16,7 +16,7 @@ if (isset($_GET['token'])) {
 
     // Validar token mediante password_verify
     while ($fila = $resultado->fetch_assoc()) {
-        if (password_verify($token, $fila['token_hash'])) {
+        if (password_verify($token, $fila['token'])) {
             $dni = $fila['dni'];
             break;
         }

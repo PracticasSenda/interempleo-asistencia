@@ -145,13 +145,42 @@ include(__DIR__ . '/../config/csrf.php');
         <!-- Hidden para detalle -->
         <input type="hidden" name="detalle_json" id="detalle_json">
 
-        <button type="submit" id="btnGuardarParte" class="btn-principal" disabled style="margin-top:12px;">
+        <button type="button" id="btnGuardarParte" class="btn-principal" disabled style="margin-top:12px;">
           Emitir parte
         </button>
       </div>
     </form>
   </div>
 </div>
+
+
+<!-- ============ MODAL RESUMEN PARTE (NECESARIO PARA GUARDAR) ============ -->
+<div id="modal-resumen-parte" class="modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:9999; align-items:center; justify-content:center;">
+  <div class="modal-card" style="background:#fff; width:min(720px, 95vw); border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.2); overflow:hidden;">
+    <div style="padding:16px 20px; border-bottom:1px solid #eee;">
+      <h3 style="margin:0; font-size:18px;">Resumen del parte</h3>
+      <p style="margin:.5rem 0 0; color:#666; font-size:14px;">
+        Revisa la información antes de confirmar el guardado.
+      </p>
+    </div>
+
+    <div id="resumen-parte" style="padding:16px 20px; max-height:55vh; overflow:auto;">
+      <!-- aquí inyecta el JS el resumen -->
+    </div>
+
+    <div style="padding:14px 20px; border-top:1px solid #eee; display:flex; gap:10px; justify-content:flex-end;">
+      <button type="button" id="btn-cancelar-resumen" class="btn-secundario" style="padding:8px 14px; border:1px solid #ddd; border-radius:8px; background:#fff; cursor:pointer;">
+        Cancelar
+      </button>
+      <button type="button" id="btn-confirmar-resumen" class="btn-principal" style="padding:8px 14px; border:none; border-radius:8px; background:#27ae60; color:#fff; cursor:pointer;">
+        Confirmar y guardar
+      </button>
+    </div>
+  </div>
+</div>
+<!-- ===================================================================== -->
+
+
 
 <?php include(__DIR__ . '/footer.php'); ?>
 
